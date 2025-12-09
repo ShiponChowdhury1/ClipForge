@@ -25,7 +25,7 @@ export default function Header({
   
   return (
     <header 
-      className="mb-6 lg:mt-3 sm:mb-5 md:mb-6 rounded-lg p-4 sm:p-5 md:p-6"
+      className="mb-6 lg:mt-3 sm:mb-5 mt-4 md:mb-6 rounded-lg p-4 sm:p-5 md:p-6"
       style={{
         backgroundColor: theme === "dark" ? "#272727" : "#FFFFFF",
         border: theme === "dark" ? '1px solid #5E5E5E' : '1px solid #E5E7EB',
