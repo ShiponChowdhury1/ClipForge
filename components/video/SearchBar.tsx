@@ -20,11 +20,13 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         placeholder="Search your generated videos"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border py-2 pl-10 pr-4 focus:outline-none"
+        className="w-full rounded-md border pl-10 pr-4 focus:outline-none"
         style={{
+          height: "48px",
           backgroundColor: theme === "dark" ? "#18181B" : "#F4F4F5",
           borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
-          color: theme === "dark" ? "#FAFAFA" : "#000000"
+          color: theme === "dark" ? "#FAFAFA" : "#000000",
+          borderRadius: "8px"
         }}
       />
     </div>

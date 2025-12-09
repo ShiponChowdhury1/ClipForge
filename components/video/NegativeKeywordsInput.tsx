@@ -34,11 +34,13 @@ export function NegativeKeywordsInput({ value, onChange }: NegativeKeywordsInput
         placeholder="Enter negative keywords"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border px-4 py-3 focus:outline-none"
+        className="w-full rounded-lg border px-4 focus:outline-none"
         style={{
+          height: "48px",
           backgroundColor: theme === "dark" ? "#18181B" : "#F4F4F5",
           borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
-          color: theme === "dark" ? "#FAFAFA" : "#000000"
+          color: theme === "dark" ? "#FAFAFA" : "#000000",
+          borderRadius: "8px"
         }}
       />
     </div>

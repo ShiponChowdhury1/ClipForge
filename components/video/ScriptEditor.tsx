@@ -23,11 +23,13 @@ export function ScriptEditor({ value, onChange }: ScriptEditorProps) {
         onChange={(e) => onChange(e.target.value)}
         placeholder="Enter your script here..."
         maxLength={maxCharacters}
-        className="min-h-[150px] w-full rounded-lg border px-4 py-3 focus:outline-none"
+        className="w-full rounded-lg border px-4 focus:outline-none"
         style={{
+          height: "102px",
           backgroundColor: theme === "dark" ? "#18181B" : "#F4F4F5",
           borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
-          color: theme === "dark" ? "#FAFAFA" : "#000000"
+          color: theme === "dark" ? "#FAFAFA" : "#000000",
+          borderRadius: "8px"
         }}
       />
       <div 
