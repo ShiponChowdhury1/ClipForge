@@ -20,7 +20,13 @@ export default function Sidebar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useDashboard();
   const pathname = usePathname();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [activeNav, setActiveNav] = useState(pathname);
   const { theme, toggleTheme } = useTheme();
+
+  // Sync activeNav with pathname changes
+  React.useEffect(() => {
+    setActiveNav(pathname);
+  }, [pathname]);
 
   const handleLogout = () => {
     setShowLogoutModal(false);
@@ -77,20 +83,23 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col gap-2 md:gap-3">
+        <nav className="flex flex-col gap-8">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = activeNav === item.href;
             const Icon = item.icon;
             return (
               <div key={item.name} className="flex justify-center">
-                <Link href={item.href} onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href={item.href} onClick={() => {
+                  setActiveNav(item.href);
+                  setIsMobileMenuOpen(false);
+                }}>
                   <Button
                     variant={isActive ? "default" : "ghost"}
                     className="justify-start text-sm md:text-base font-medium"
                     style={{
                       backgroundColor: isActive ? "#3B82F6" : "transparent",
                       color: isActive ? "#FFFFFF" : (theme === "dark" ? "#D4D4D8" : "#3F3F46"),
-                      border: "1px solid #5E5E5E",
+                      border: isActive ? "none" : "1px solid #5E5E5E",
                       width: "240px",
                       height: "48px",
                       borderRadius: "8px",

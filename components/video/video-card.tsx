@@ -127,7 +127,7 @@ export default function VideoCard({ video, onDelete }: VideoCardProps) {
       <CardFooter className="p-0 pt-3 sm:pt-4" style={{ gap: '20px' }}>
         <Button 
           className="flex-1 bg-[#3B82F6] hover:bg-[#3B82F6]/90 h-9 sm:h-10 md:h-11 text-xs sm:text-sm md:text-base" 
-          style={{ border: '1px solid #5E5E5E' }}
+          style={{ border: 'none' }}
           onClick={(e) => {
             e.stopPropagation();
             const currentPath = window.location.pathname;
@@ -141,13 +141,13 @@ export default function VideoCard({ video, onDelete }: VideoCardProps) {
           variant="outline" 
           size="icon"
           className="h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11"
-          style={{ border: '1px solid #5E5E5E', backgroundColor: 'transparent' }}
+          style={{ backgroundColor: 'transparent' }}
           onClick={(e) => {
             e.stopPropagation();
             setShowDeleteModal(true);
           }}
         >
-          <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: '#E33629' }} />
+          <Trash2 className="h-6 w-6" style={{ color: '#E33629' }} />
         </Button>
       </CardFooter>
     </Card>
