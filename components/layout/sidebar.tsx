@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Plus, Video, LogOut, Sun, Moon, X } from "lucide-react";
+import { LayoutDashboard, Plus, Video, Sun, Moon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import logo from '../../public/logo/logo.png'
@@ -117,9 +117,10 @@ export default function Sidebar() {
         </nav>
 
         {/* Bottom Section */}
+        
         <div className="mt-auto">
           <div className="flex gap-2 justify-center">
-          <Button 
+          {/* <Button 
             variant="outline" 
             className="flex-1 gap-2 md:gap-3 px-3 md:px-4 py-3 md:py-5 text-sm md:text-base font-medium"
             style={{
@@ -131,7 +132,7 @@ export default function Sidebar() {
           >
             <LogOut className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#E33629', width: '24px', height: '24px' }} />
             Logout
-          </Button>
+          </Button> */}
           <Button 
             variant="outline" 
             size="icon"
