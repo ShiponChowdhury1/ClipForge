@@ -14,47 +14,70 @@ export function DateFilter({ selectedDate, onDateChange }: DateFilterProps) {
 
   return (
     <div className="relative">
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="shrink-0 w-10 h-10 rounded-lg"
-        style={{
-          borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
-          backgroundColor: "transparent"
-        }}
-        onClick={() => setShowDatePicker(!showDatePicker)}
-      >
+      {/* Mobile: Flex layout with icon and input */}
+      <div className="flex items-center gap-2 md:hidden">
         <Calendar 
-          className="h-8 w-8"
+          className="h-5 w-5 shrink-0"
           style={{ color: theme === "dark" ? "#FAFAFA" : "#3F3F46" }}
         />
-      </Button>
-      
-      {showDatePicker && (
-        <div 
-          className="absolute right-0 top-12 z-10 rounded-lg border p-4 shadow-xl"
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => onDateChange(e.target.value)}
+          className="flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none"
           style={{
-            backgroundColor: theme === "dark" ? "#18181B" : "#FFFFFF",
-            borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8"
+            backgroundColor: theme === "dark" ? "#27272A" : "#F4F4F5",
+            borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
+            color: theme === "dark" ? "#FAFAFA" : "#000000",
+            colorScheme: theme === "dark" ? "dark" : "light"
           }}
+        />
+      </div>
+
+      {/* Desktop: Button with dropdown */}
+      <div className="hidden md:block">
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="shrink-0 w-10 h-10 rounded-lg"
+          style={{
+            borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
+            backgroundColor: "transparent"
+          }}
+          onClick={() => setShowDatePicker(!showDatePicker)}
         >
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => {
-              onDateChange(e.target.value);
-              setShowDatePicker(false);
-            }}
-            className="rounded-md border px-3 py-2 focus:outline-none"
-            style={{
-              backgroundColor: theme === "dark" ? "#27272A" : "#F4F4F5",
-              borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
-              color: theme === "dark" ? "#FAFAFA" : "#000000",
-              colorScheme: theme === "dark" ? "dark" : "light"
-            }}
+          <Calendar 
+            className="h-8 w-8"
+            style={{ color: theme === "dark" ? "#FAFAFA" : "#3F3F46" }}
           />
-        </div>
-      )}
+        </Button>
+        
+        {showDatePicker && (
+          <div 
+            className="absolute right-0 top-12 z-10 rounded-lg border p-4 shadow-xl"
+            style={{
+              backgroundColor: theme === "dark" ? "#18181B" : "#FFFFFF",
+              borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8"
+            }}
+          >
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                onDateChange(e.target.value);
+                setShowDatePicker(false);
+              }}
+              className="rounded-md border px-3 py-2 focus:outline-none"
+              style={{
+                backgroundColor: theme === "dark" ? "#27272A" : "#F4F4F5",
+                borderColor: theme === "dark" ? "#3F3F46" : "#D4D4D8",
+                color: theme === "dark" ? "#FAFAFA" : "#000000",
+                colorScheme: theme === "dark" ? "dark" : "light"
+              }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

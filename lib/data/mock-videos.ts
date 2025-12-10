@@ -93,6 +93,7 @@ export const videoStyles = [
   { id: "glow-wave", name: "Glow Wave", image: "/createVideo/cartoon.mp4" },
 ];
 
+
 export const voiceTypes = [
   { id: "ava", name: "Ava", description: "Calm Narrator", avatar: "/create/profile1.png" },
   { id: "blake", name: "Blake", description: "Deep Documentary", avatar: "/create/profile2.png" },
