@@ -153,7 +153,7 @@ export default function GenerateVideoPage() {
             Back
           </Button>
           <Button 
-            className="w-full sm:flex-1 bg-blue-600 py-4 sm:py-5 md:py-6 text-sm sm:text-base hover:bg-blue-700"
+            className="w-full sm:flex-1 bg-[#3B82F6] py-4 sm:py-5 md:py-6 text-sm sm:text-base hover:bg-[#2563EB]"
             disabled={!isComplete}
             onClick={() => router.push("/video/1")}
           >
