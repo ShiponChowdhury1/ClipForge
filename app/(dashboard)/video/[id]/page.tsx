@@ -227,7 +227,7 @@ export default function VideoDetailsPage() {
         </Button>
         <Button 
           onClick={handleDownload}
-          className="w-full sm:flex-1 bg-[#3B82F6] py-4 sm:py-5 md:py-6 text-xs sm:text-sm hover:bg-[#3B82F6]/90"
+          className="w-full sm:flex-1 bg-[#3B82F6] text-white! py-4 sm:py-5 md:py-6 text-xs sm:text-sm hover:bg-[#3B82F6]/90"
         >
           <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
           Download

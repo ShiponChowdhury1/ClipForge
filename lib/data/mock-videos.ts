@@ -81,16 +81,16 @@ export const videos: Video[] = [
 
 
 export const videoStyles = [
-  { id: "3d-cartoon", name: "3D Cartoon", image: "/createVideo/cartoon.mp4" },
-  { id: "anime", name: "Anime", image: "/createVideo/anime.mp4" },
-  { id: "cgi-noir", name: "CGI Noir", image: "/createVideo/cartoon.mp4" },
-  { id: "claynimation", name: "Claynimation", image: "/createVideo/cartoon.mp4" },
-  { id: "dark-fantasy", name: "Dark Fantasy", image: "/createVideo/swat.mp4" },
-  { id: "digital-painting", name: "Digital Painting", image: "/createVideo/ggNoir.mp4" },
-  { id: "dream-core", name: "Dream Core", image: "/createVideo/sky.mp4" },
-  { id: "cinematic-noir", name: "Cinematic Noir", image: "/createVideo/cartoon.mp4" },
-  { id: "synthwave", name: "Synthwave", image: "/createVideo/anime.mp4" },
-  { id: "glow-wave", name: "Glow Wave", image: "/createVideo/cartoon.mp4" },
+  { id: "3d-cartoon", name: "3D Cartoon", image: "/create/cartoon1.png" },
+  { id: "anime", name: "Anime", image: "/create/cartoon2.png" },
+  { id: "cgi-noir", name: "CGI Noir", image: "/create/cartoon3.png" },
+  { id: "claynimation", name: "Claynimation", image: "/create/cartoon4.png" },
+  { id: "dark-fantasy", name: "Dark Fantasy", image: "/create/cartoon5.png" },
+  { id: "digital-painting", name: "Digital Painting", image: "/create/cartoon6.png" },
+  { id: "dream-core", name: "Dream Core", image: "/create/cartoon7.png" },
+  { id: "cinematic-noir", name: "Cinematic Noir", image: "/create/cartoon8.png" },
+  { id: "synthwave", name: "Synthwave", image: "/create/cartoon9.png" },
+  { id: "glow-wave", name: "Glow Wave", image: "/create/cartoon10.png" },
 ];
 
 

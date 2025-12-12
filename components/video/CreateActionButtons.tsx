@@ -15,7 +15,7 @@ export function CreateActionButtons() {
         Cancel
       </Button>
       <Button 
-        className="flex-1 bg-[#3B82F6] py-6 hover:bg-[#3B82F6]/90"
+        className="flex-1 bg-[#3B82F6] text-white! py-6 hover:bg-[#3B82F6]/90"
         onClick={() => router.push("/generate")}
       >
         <Download className="mr-2 h-4 w-4" />

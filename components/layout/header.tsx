@@ -78,7 +78,7 @@ export default function Header({
           <div className="shrink-0 flex items-center">
             <Link href="/create-video">
               <Button 
-                className="text-sm md:text-base font-medium whitespace-nowrap"
+                className="text-sm md:text-base font-medium whitespace-nowrap text-white!"
                 style={{
                   height: "46px",
                   borderRadius: "8px",
@@ -91,7 +91,7 @@ export default function Header({
                 }}
               >
                 <Plus className="h-5 w-5 md:h-6 md:w-6" />
-                <span className="hidden sm:inline">Create New Video</span>
+                <span className="hidden sm:inline text-white!">Create New Video</span>
               </Button>
             </Link>
           </div>

@@ -34,13 +34,10 @@ export function VideoStyleSelector({ selectedStyle, onStyleChange }: VideoStyleS
             }}
           >
             <div className="w-full overflow-hidden rounded-lg bg-zinc-950 flex-1">
-              <video 
+              <img 
                 src={style.image} 
+                alt={style.name}
                 className="h-full w-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
               />
             </div>
             <span 

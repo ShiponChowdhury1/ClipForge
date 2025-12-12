@@ -126,8 +126,8 @@ export default function VideoCard({ video, onDelete }: VideoCardProps) {
       </CardContent>
       <CardFooter className="p-0 pt-3 sm:pt-4" style={{ gap: '20px' }}>
         <Button 
-          className="flex-1 bg-[#3B82F6] hover:bg-[#3B82F6]/90 h-9 sm:h-10 md:h-11 text-xs sm:text-sm md:text-base" 
-          style={{ border: 'none' }}
+          className="flex-1 bg-[#3B82F6] text-white! hover:bg-[#3B82F6]/90 h-9 sm:h-10 md:h-11 text-xs sm:text-sm md:text-base" 
+          style={{ border: 'none', color: '#FFFFFF' }}
           onClick={(e) => {
             e.stopPropagation();
             const currentPath = window.location.pathname;
