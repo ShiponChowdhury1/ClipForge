@@ -26,7 +26,7 @@ export function TitleInput({ value, onChange }: TitleInputProps) {
           }}
           title="Video title information"
         >
-          !
+          ?
         </button>
       </div>
       <input

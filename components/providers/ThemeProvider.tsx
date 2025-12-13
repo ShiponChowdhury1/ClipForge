@@ -11,45 +11,33 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Always start with dark theme for SSR
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme from localStorage after mount
+  // After mounting, load theme from localStorage
   useEffect(() => {
-    const savedTheme = (localStorage.getItem("theme") as Theme) || "dark";
-    setTheme(savedTheme);
     setMounted(true);
+    const savedTheme = localStorage.getItem("theme") as Theme;
+    if (savedTheme && savedTheme !== theme) {
+      setTheme(savedTheme);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Apply theme class and save to localStorage
+  // Apply theme class to document and save to localStorage when theme changes
   useEffect(() => {
     if (!mounted) return;
     
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.add("light");
-      root.classList.remove("dark");
-    }
-    
-    // Save to localStorage
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
     localStorage.setItem("theme", theme);
   }, [theme, mounted]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
-
-  // Prevent flash of unstyled content by rendering with default theme first
-  if (!mounted) {
-    return (
-      <ThemeContext.Provider value={{ theme: "dark", toggleTheme }}>
-        {children}
-      </ThemeContext.Provider>
-    );
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

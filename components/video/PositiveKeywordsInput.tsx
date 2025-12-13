@@ -1,11 +1,11 @@
 import { useTheme } from "@/components/providers/ThemeProvider";
 
-interface NegativeKeywordsInputProps {
+interface PositiveKeywordsInputProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-export function NegativeKeywordsInput({ value, onChange }: NegativeKeywordsInputProps) {
+export function PositiveKeywordsInput({ value, onChange }: PositiveKeywordsInputProps) {
   const { theme } = useTheme();
   
   return (
@@ -15,7 +15,7 @@ export function NegativeKeywordsInput({ value, onChange }: NegativeKeywordsInput
           className="text-sm font-medium"
           style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
         >
-      Negative  Keywords
+         Positive Keywords
         </label>
         <button
           type="button"
@@ -24,14 +24,14 @@ export function NegativeKeywordsInput({ value, onChange }: NegativeKeywordsInput
             backgroundColor: "#3B82F6",
             color: "#FFFFFF"
           }}
-          title="Negative keywords information"
+          title="Positive keywords information"
         >
           ?
         </button>
       </div>
       <input
         type="text"
-        placeholder="Enter negative keywords"
+        placeholder="Enter positive keywords"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border px-4 focus:outline-none"

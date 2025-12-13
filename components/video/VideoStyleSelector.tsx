@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { videoStyles } from "@/lib/data/mock-videos";
 import { useTheme } from "@/components/providers/ThemeProvider";
 
@@ -34,9 +35,11 @@ export function VideoStyleSelector({ selectedStyle, onStyleChange }: VideoStyleS
             }}
           >
             <div className="w-full overflow-hidden rounded-lg bg-zinc-950 flex-1">
-              <img 
+              <Image 
                 src={style.image} 
                 alt={style.name}
+                width={200}
+                height={200}
                 className="h-full w-full object-cover"
               />
             </div>

@@ -26,7 +26,7 @@ export function KeywordsInput({ value, onChange }: KeywordsInputProps) {
           }}
           title="Keywords information"
         >
-          !
+          ?
         </button>
       </div>
       <input

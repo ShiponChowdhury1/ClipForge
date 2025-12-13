@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { TitleInput } from "@/components/video/TitleInput";
 import { KeywordsInput } from "@/components/video/KeywordsInput";
+import { PositiveKeywordsInput } from "@/components/video/PositiveKeywordsInput";
 import { NegativeKeywordsInput } from "@/components/video/NegativeKeywordsInput";
 import { VideoFormatSelector } from "@/components/video/VideoFormatSelector";
 import { VideoStyleSelector } from "@/components/video/VideoStyleSelector";
@@ -36,6 +37,7 @@ export default function CreateVideoForm() {
   // Form state
   const [videoTitle, setVideoTitle] = useState("");
   const [category, setCategory] = useState("");
+  const [positiveKeywords, setPositiveKeywords] = useState("");
   const [keywords, setKeywords] = useState("");
   const [videoFormat, setVideoFormat] = useState("9:16");
   const [selectedStyle, setSelectedStyle] = useState("anime");
@@ -161,6 +163,8 @@ export default function CreateVideoForm() {
       <TitleInput value={videoTitle} onChange={setVideoTitle} />
       
       <KeywordsInput value={category} onChange={setCategory} />
+      
+      <PositiveKeywordsInput value={positiveKeywords} onChange={setPositiveKeywords} />
       
       <NegativeKeywordsInput value={keywords} onChange={setKeywords} />
       
