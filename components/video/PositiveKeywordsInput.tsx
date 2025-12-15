@@ -15,7 +15,7 @@ export function PositiveKeywordsInput({ value, onChange }: PositiveKeywordsInput
           className="text-sm font-medium"
           style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
         >
-         Positive Keywords
+         Positive Keywords <span style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}>(optional)</span>
         </label>
         <button
           type="button"

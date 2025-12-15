@@ -15,7 +15,7 @@ export function NegativeKeywordsInput({ value, onChange }: NegativeKeywordsInput
           className="text-sm font-medium"
           style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
         >
-      Negative  Keywords
+      Negative  Keywords <span style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}>(optional)</span>
         </label>
         <button
           type="button"

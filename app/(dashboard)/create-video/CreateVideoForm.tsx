@@ -70,10 +70,6 @@ export default function CreateVideoForm() {
       toast.error("Please enter a video category");
       return;
     }
-    if (!keywords.trim()) {
-      toast.error("Please enter keywords");
-      return;
-    }
     if (!script.trim()) {
       toast.error("Please enter a video script");
       return;
