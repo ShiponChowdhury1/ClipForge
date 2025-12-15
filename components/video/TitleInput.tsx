@@ -15,7 +15,7 @@ export function TitleInput({ value, onChange }: TitleInputProps) {
           className="text-sm font-medium"
           style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
         >
-          Video Title
+          Video Title <span style={{ color: "#EF4444" }}>*</span>
         </label>
         <button
           type="button"

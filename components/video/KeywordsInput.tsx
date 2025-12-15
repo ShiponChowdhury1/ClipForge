@@ -15,7 +15,7 @@ export function KeywordsInput({ value, onChange }: KeywordsInputProps) {
           className="text-sm font-medium"
           style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
         >
-         Video Category
+         Video Category <span style={{ color: "#EF4444" }}>*</span>
         </label>
         <button
           type="button"
