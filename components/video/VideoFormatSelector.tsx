@@ -31,23 +31,7 @@ export function VideoFormatSelector({ selectedFormat, onFormatChange }: VideoFor
           }}
         >
           <div className="mb-2 sm:mb-3 h-32 w-12 sm:h-40 sm:w-16 rounded border border-zinc-600"></div>
-          <span className="text-xs sm:text-sm text-zinc-400">9:16</span>
-        </button>
-        <button
-          onClick={() => onFormatChange("1:1")}
-          className="flex flex-col items-center justify-center w-28 h-40 sm:w-[150px] sm:h-[194px]"
-          style={{
-            borderRadius: '12px',
-            borderWidth: selectedFormat === "1:1" ? '2px' : '1px',
-            padding: '12px sm:20px',
-            gap: '12px',
-            opacity: 1,
-            borderColor: selectedFormat === "1:1" ? '#3B82F6' : (theme === "dark" ? '#3F3F46' : '#D4D4D8'),
-            backgroundColor: selectedFormat === "1:1" ? (theme === "dark" ? '#27272A' : '#E4E4E7') : (theme === "dark" ? '#18181B' : '#F4F4F5')
-          }}
-        >
-          <div className="mb-2 sm:mb-3 h-20 w-20 sm:h-24 sm:w-24 rounded border border-zinc-600"></div>
-          <span className="text-xs sm:text-sm text-zinc-400">1:1</span>
+          <span className="text-xs sm:text-sm text-zinc-400">Portrait (9:16)</span>
         </button>
         <button
           onClick={() => onFormatChange("16:9")}
@@ -69,7 +53,7 @@ export function VideoFormatSelector({ selectedFormat, onFormatChange }: VideoFor
           <span 
             className="text-xs sm:text-sm"
             style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}
-          >16:9</span>
+          >Landscape (16:9)</span>
         </button>
       </div>
     </div>

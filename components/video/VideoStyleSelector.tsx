@@ -23,7 +23,7 @@ export function VideoStyleSelector({ selectedStyle, onStyleChange, styles }: Vid
       >
         Video Style
       </label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2 sm:gap-3">
         {displayStyles.map((style) => {
           // Check if it's an API style or mock style
           const isApiStyle = 'description' in style && !('image' in style);

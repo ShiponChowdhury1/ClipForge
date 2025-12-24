@@ -39,13 +39,12 @@ export default function CreateVideoForm() {
   // API data
   const [styles, setStyles] = useState<Style[]>([]);
   const [voices, setVoices] = useState<Voice[]>([]);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
-  // Load styles and voices from API
+  // Load styles and voices from API (optimized - don't block UI)
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        setIsLoadingOptions(true);
         const [stylesData, voicesData] = await Promise.all([
           videoApi.listStyles(),
           videoApi.listVoices(),
@@ -53,7 +52,7 @@ export default function CreateVideoForm() {
         setStyles(stylesData);
         setVoices(voicesData);
         
-        // Set defaults
+        // Set defaults only if not already set
         if (stylesData.length > 0 && !selectedStyle) {
           setSelectedStyle(stylesData[0].id);
         }
@@ -62,9 +61,7 @@ export default function CreateVideoForm() {
         }
       } catch (err) {
         console.error('Failed to fetch options:', err);
-        toast.error('Failed to load styles and voices');
-      } finally {
-        setIsLoadingOptions(false);
+        // Don't show error toast, just use fallback data
       }
     };
 
@@ -186,21 +183,15 @@ export default function CreateVideoForm() {
         </button>
       </div>
 
-      {isLoadingOptions ? (
-        <div className="flex items-center justify-center py-20">
-          <div style={{ color: theme === "dark" ? "#FEFEFE" : "#000000" }} className="text-lg">
-            Loading options...
-          </div>
-        </div>
-      ) : (
-        <>
-          <TitleInput value={videoTitle} onChange={setVideoTitle} />
-          
-          <KeywordsInput value={category} onChange={setCategory} />
-          
-          <PositiveKeywordsInput 
-            value={positiveKeywords.join(', ')} 
-            onChange={handlePositiveKeywordsChange} 
+      {/* Always show form immediately, load data in background */}
+      <>
+        <TitleInput value={videoTitle} onChange={setVideoTitle} />
+        
+        <KeywordsInput value={category} onChange={setCategory} />
+        
+        <PositiveKeywordsInput 
+          value={positiveKeywords.join(', ')} 
+          onChange={handlePositiveKeywordsChange} 
           />
           
           <NegativeKeywordsInput 
@@ -291,8 +282,7 @@ export default function CreateVideoForm() {
               {isSubmitting ? "Creating..." : (isEditMode ? "Update & Generate" : "Create Video")}
             </button>
           </div>
-        </>
-      )}
+      </>
     </div>
   );
 }
