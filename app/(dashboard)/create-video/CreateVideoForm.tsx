@@ -39,7 +39,6 @@ export default function CreateVideoForm() {
   // API data
   const [styles, setStyles] = useState<Style[]>([]);
   const [voices, setVoices] = useState<Voice[]>([]);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
   // Load styles and voices from API (optimized - don't block UI)
   useEffect(() => {
@@ -66,7 +65,7 @@ export default function CreateVideoForm() {
     };
 
     fetchOptions();
-  }, []);
+  }, [selectedStyle, selectedVoice]);
 
   // Load video data if editing
   useEffect(() => {
@@ -137,9 +136,9 @@ export default function CreateVideoForm() {
       setTimeout(() => {
         router.push(`/generate?videoId=${result.id}`);
       }, 500);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating video:", error);
-      const errorMsg = error.response?.data?.detail || error.message || "Failed to create video";
+      const errorMsg = error instanceof Error ? error.message : "Failed to create video";
       toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);

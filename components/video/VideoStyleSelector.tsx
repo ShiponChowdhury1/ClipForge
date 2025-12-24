@@ -46,7 +46,7 @@ export function VideoStyleSelector({ selectedStyle, onStyleChange, styles }: Vid
               {!isApiStyle && 'image' in style && (
                 <div className="w-full overflow-hidden rounded-lg bg-zinc-950 flex-1">
                   <Image 
-                    src={style.image} 
+                    src={style.image as string} 
                     alt={style.name}
                     width={200}
                     height={200}
