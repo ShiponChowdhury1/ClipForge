@@ -1,10 +1,15 @@
 "use client";
 import React, { useState } from "react";
+import useSWR from 'swr';
 import Header from "@/components/layout/header";
-import { videos } from "@/lib/data/mock-videos";
 import { AllVideosFilter } from "@/components/video/AllVideosFilter";
 import { VideoGrid } from "@/components/video/VideoGrid";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { videoApi } from "@/lib/api/client";
+import { Video } from "@/types";
+import { toast } from "react-toastify";
+
+const fetcher = () => videoApi.listVideos();
 
 export default function AllVideosPage() {
   const { theme } = useTheme();
@@ -12,20 +17,55 @@ export default function AllVideosPage() {
   const [filter, setFilter] = useState("all");
   const [selectedDate, setSelectedDate] = useState("");
 
-  const handleDelete = (id: string) => {
-    console.log("Delete video:", id);
+  // Fetch videos with SWR - auto refresh every 10 seconds
+  const { data: videos, error, isLoading, mutate } = useSWR<Video[]>('/videos', fetcher, {
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+    shouldRetryOnError: false,
+    onError: (err) => {
+      console.error('Failed to load videos:', err);
+    }
+  });
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this video?')) {
+      return;
+    }
+    
+    try {
+      await videoApi.deleteVideo(id);
+      toast.success("Video deleted successfully!");
+      mutate(); // Refresh the video list
+    } catch (error) {
+      console.error('Failed to delete video:', error);
+      toast.error("Failed to delete video");
+    }
   };
 
   const handleDownload = (id: string) => {
-    console.log("Download video:", id);
+    const video = videos?.find(v => v.id === id);
+    if (video && video.video_path) {
+      const url = videoApi.getVideoUrl(video.video_path);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${video.title}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("Video download started!");
+    } else {
+      toast.error("Video not available for download");
+    }
   };
 
-  const filteredVideos = videos.filter((video) => {
+  const filteredVideos = (videos || []).filter((video) => {
     const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === "all" || video.category.toLowerCase() === filter.toLowerCase();
+    const matchesFilter = filter === "all" || 
+      (video.category && video.category.toLowerCase() === filter.toLowerCase()) ||
+      (video.style && video.style.toLowerCase() === filter.toLowerCase()) ||
+      (video.status && video.status.toLowerCase() === filter.toLowerCase());
     return matchesSearch && matchesFilter;
   });
- 
   return (
     <>
       <Header 
@@ -49,19 +89,90 @@ export default function AllVideosPage() {
         </h2>
 
         <AllVideosFilter
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeFilter={filter}
-        onFilterChange={setFilter}
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
-      />
-
-        <VideoGrid
-          videos={filteredVideos}
-          onDelete={handleDelete}
-          onDownload={handleDownload}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeFilter={filter}
+          onFilterChange={setFilter}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
         />
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div 
+            className="rounded-lg p-4 border"
+            style={{
+              backgroundColor: theme === "dark" ? "#1F1F1F" : "#F9FAFB",
+              borderColor: theme === "dark" ? "#3F3F46" : "#E5E7EB"
+            }}
+          >
+            <p style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }} className="text-sm">Total Videos</p>
+            <p style={{ color: theme === "dark" ? "#FEFEFE" : "#000000" }} className="text-3xl font-bold">{videos?.length || 0}</p>
+          </div>
+          <div 
+            className="rounded-lg p-4 border"
+            style={{
+              backgroundColor: theme === "dark" ? "#1F1F1F" : "#F0FDF4",
+              borderColor: theme === "dark" ? "#3F3F46" : "#BBF7D0"
+            }}
+          >
+            <p style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }} className="text-sm">Completed</p>
+            <p className="text-3xl font-bold text-green-500">
+              {videos?.filter(v => v.status === 'completed').length || 0}
+            </p>
+          </div>
+          <div 
+            className="rounded-lg p-4 border"
+            style={{
+              backgroundColor: theme === "dark" ? "#1F1F1F" : "#FEF3C7",
+              borderColor: theme === "dark" ? "#3F3F46" : "#FDE68A"
+            }}
+          >
+            <p style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }} className="text-sm">Processing</p>
+            <p className="text-3xl font-bold text-yellow-500">
+              {videos?.filter(v => v.status === 'processing' || v.status === 'pending').length || 0}
+            </p>
+          </div>
+          <div 
+            className="rounded-lg p-4 border"
+            style={{
+              backgroundColor: theme === "dark" ? "#1F1F1F" : "#FEE2E2",
+              borderColor: theme === "dark" ? "#3F3F46" : "#FECACA"
+            }}
+          >
+            <p style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }} className="text-sm">Failed</p>
+            <p className="text-3xl font-bold text-red-500">
+              {videos?.filter(v => v.status === 'failed').length || 0}
+            </p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div style={{ color: theme === "dark" ? "#FEFEFE" : "#000000" }} className="text-lg">
+              Loading videos...
+            </div>
+          </div>
+        ) : error ? (
+          <div 
+            className="border rounded-lg p-4"
+            style={{
+              backgroundColor: theme === "dark" ? "#7F1D1D" : "#FEE2E2",
+              borderColor: theme === "dark" ? "#991B1B" : "#EF4444",
+              color: theme === "dark" ? "#FCA5A5" : "#991B1B"
+            }}
+          >
+            <p className="font-semibold mb-2">⚠️ Unable to connect to backend API</p>
+            <p className="text-sm">Please make sure your backend server is running at:</p>
+            <p className="text-sm font-mono mt-1">https://6ljz73mw-8000.inc1.devtunnels.ms</p>
+          </div>
+        ) : (
+          <VideoGrid
+            videos={filteredVideos}
+            onDelete={handleDelete}
+            onDownload={handleDownload}
+          />
+        )}
       </div>
     </>
   );

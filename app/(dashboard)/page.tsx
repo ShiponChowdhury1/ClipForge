@@ -1,22 +1,61 @@
 "use client";
 import React from "react";
+import useSWR from 'swr';
 import Header from "@/components/layout/header";
 import VideoCard from "@/components/video/video-card";
-import { videos } from "@/lib/data/mock-videos";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { videoApi } from "@/lib/api/client";
+import { Video } from "@/types";
+import { toast } from "react-toastify";
+
+const fetcher = () => videoApi.listVideos();
 
 export default function DashboardPage() {
   const { theme } = useTheme();
-  const handleDelete = (id: string) => {
-    console.log("Delete video:", id);
+
+  // Fetch videos with SWR - auto refresh every 10 seconds with error retry
+  const { data: videos, error, isLoading, mutate } = useSWR<Video[]>('/videos', fetcher, {
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+    shouldRetryOnError: false,
+    onError: (err) => {
+      console.error('Failed to load videos:', err);
+    }
+  });
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this video?')) {
+      return;
+    }
+    
+    try {
+      await videoApi.deleteVideo(id);
+      toast.success("Video deleted successfully!");
+      mutate(); // Refresh the video list
+    } catch (error) {
+      console.error('Failed to delete video:', error);
+      toast.error("Failed to delete video");
+    }
   };
 
   const handleDownload = (id: string) => {
-    console.log("Download video:", id);
+    const video = videos?.find(v => v.id === id);
+    if (video && video.video_path) {
+      const url = videoApi.getVideoUrl(video.video_path);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${video.title}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("Video download started!");
+    } else {
+      toast.error("Video not available for download");
+    }
   };
 
-  // Show only first 3 videos on dashboard
-  const recentVideos = videos.slice(0, 6);
+  // Show only first 6 videos on dashboard
+  const recentVideos = (videos || []).slice(0, 6);
 
   return (
     <>
@@ -41,16 +80,43 @@ export default function DashboardPage() {
           Recently Generated Video
         </h2>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-          {recentVideos.map((video) => (
-            <VideoCard
-              key={video.id}
-              video={video}
-              onDelete={handleDelete}
-              onDownload={handleDownload}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div style={{ color: theme === "dark" ? "#FEFEFE" : "#000000" }} className="text-lg">
+              Loading videos...
+            </div>
+          </div>
+        ) : error ? (
+          <div 
+            className="border rounded-lg p-4 text-center"
+            style={{
+              backgroundColor: theme === "dark" ? "#7F1D1D" : "#FEE2E2",
+              borderColor: theme === "dark" ? "#991B1B" : "#EF4444",
+              color: theme === "dark" ? "#FCA5A5" : "#991B1B"
+            }}
+          >
+            <p className="font-semibold mb-2">⚠️ Unable to connect to backend API</p>
+            <p className="text-sm">Please make sure your backend server is running at:</p>
+            <p className="text-sm font-mono mt-1">https://6ljz73mw-8000.inc1.devtunnels.ms</p>
+          </div>
+        ) : recentVideos.length === 0 ? (
+          <div className="text-center py-20">
+            <p style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }} className="text-lg">
+              No videos yet. Create your first video!
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+            {recentVideos.map((video) => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                onDelete={handleDelete}
+                onDownload={handleDownload}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

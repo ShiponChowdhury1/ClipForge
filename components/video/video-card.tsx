@@ -1,28 +1,103 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { Download, Trash2, Play, Pause, X, Maximize } from "lucide-react";
+import { Download, Trash2, Play, Pause, X, Maximize, Loader, CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react";
 import { Video } from "@/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { videoApi } from "@/lib/api/client";
+import { formatDistanceToNow } from "date-fns";
 
 interface VideoCardProps {
   video: Video;
   onDelete?: (id: string) => void;
   onDownload?: (id: string) => void;
+  onRegenerate?: (id: string) => void;
 }
 
-export default function VideoCard({ video, onDelete }: VideoCardProps) {
+export default function VideoCard({ video, onDelete, onRegenerate }: VideoCardProps) {
   const router = useRouter();
   const { theme } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fullscreenVideoRef = useRef<HTMLVideoElement>(null);
 
+  // Get video URL - support both old and new structure
+  const videoUrl = video.video_path 
+    ? videoApi.getVideoUrl(video.video_path)
+    : video.videoUrl || '';
+  
+  // Get thumbnail URL if available
+  const thumbnailUrl = video.thumbnail_path
+    ? videoApi.getThumbnailUrl(video.thumbnail_path)
+    : video.thumbnail || '';
+
+  // Format created date
+  const createdAgo = video.created_at 
+    ? formatDistanceToNow(new Date(video.created_at), { addSuffix: true })
+    : video.createdAgo || 'Recently';
+
+  // Get display category
+  const displayCategory = video.category || video.style || 'Video';
+
+  // Get status icon
+  const getStatusIcon = () => {
+    switch (video.status) {
+      case 'completed':
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
+      case 'processing':
+      case 'pending':
+        return <Loader className="w-4 h-4 text-yellow-400 animate-spin" />;
+      case 'failed':
+        return <XCircle className="w-4 h-4 text-red-400" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (video.status) {
+      case 'completed':
+        return 'Completed';
+      case 'processing':
+        return 'Processing';
+      case 'pending':
+        return 'Pending';
+      case 'failed':
+        return 'Failed';
+      default:
+        return video.status;
+    }
+  };
+
+  const handleRegenerate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isRegenerating) return;
+    
+    setIsRegenerating(true);
+    try {
+      await videoApi.regenerateVideo(video.id);
+      // Call parent callback if provided
+      if (onRegenerate) {
+        onRegenerate(video.id);
+      }
+      // Refresh the page to see updated status
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to regenerate video:', error);
+      alert('Failed to regenerate video. Please try again.');
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   const handleCardClick = () => {
+    if (video.status !== 'completed' || !videoUrl) return;
+    
     if (!isPlaying) {
       setIsPlaying(true);
       videoRef.current?.play();
@@ -33,7 +108,9 @@ export default function VideoCard({ video, onDelete }: VideoCardProps) {
   };
 
   const handleFullscreen = () => {
-    setShowModal(true);
+    if (video.status === 'completed' && videoUrl) {
+      setShowModal(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -66,94 +143,147 @@ export default function VideoCard({ video, onDelete }: VideoCardProps) {
           boxShadow: theme === "light" ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' : 'none'
         }}>
         <div 
-          className="relative bg-zinc-800 cursor-pointer group rounded-xl h-[200px] sm:h-[220px] md:h-[250px] lg:h-[270px] xl:h-[290px] overflow-hidden"
+          className={`relative bg-zinc-800 group rounded-xl h-[200px] sm:h-[220px] md:h-[250px] lg:h-[270px] xl:h-[290px] overflow-hidden ${video.status === 'completed' ? 'cursor-pointer' : 'cursor-default'}`}
           onClick={handleCardClick}
         >
-          <video
-            ref={videoRef}
-            src={video.videoUrl}
-            className="h-full w-full object-cover rounded-xl"
-            loop
-            muted
-            playsInline
-          />
-          
-          {!isPlaying && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-colors">
-                <Play className="h-5 w-5 fill-white text-white" />
-              </div>
-            </div>
-          )}
+          {video.status === 'completed' && videoUrl ? (
+            <>
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                poster={thumbnailUrl}
+                className="h-full w-full object-cover rounded-xl"
+                loop
+                muted
+                playsInline
+              />
+              
+              {!isPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm group-hover:bg-white/30 transition-colors">
+                    <Play className="h-5 w-5 fill-white text-white" />
+                  </div>
+                </div>
+              )}
 
-          {isPlaying && (
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-                  <Pause className="h-5 w-5 fill-white text-white" />
+              {isPlaying && (
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                      <Pause className="h-5 w-5 fill-white text-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Fullscreen Icon - Bottom Right */}
+              <div 
+                className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFullscreen();
+                }}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors cursor-pointer">
+                  <Maximize className="h-4 w-4 text-white" />
                 </div>
               </div>
+            </>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-linear-to-br from-gray-800 to-gray-900">
+              {getStatusIcon()}
+              <p className="text-white text-sm mt-2">{getStatusText()}</p>
             </div>
           )}
-
-          {/* Fullscreen Icon - Bottom Right */}
-          <div 
-            className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleFullscreen();
-            }}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors cursor-pointer">
-              <Maximize className="h-4 w-4 text-white" />
-            </div>
-          </div>
         </div>
 
       <CardContent className="p-0 pt-3 sm:pt-4">
-        <h3 
-          className="mb-1 text-base sm:text-lg md:text-xl font-semibold truncate"
-          style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-        >{video.title}</h3>
+        <div className="flex items-start justify-between mb-1">
+          <h3 
+            className="flex-1 text-base sm:text-lg md:text-xl font-semibold truncate"
+            style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
+          >{video.title}</h3>
+          <div className="flex items-center gap-1 ml-2">
+            {getStatusIcon()}
+          </div>
+        </div>
         <p 
           className="text-xs sm:text-sm md:text-base truncate"
           style={{ color: theme === "dark" ? "#A1A1AA" : "#52525B" }}
-        >{video.category}</p>
+        >{displayCategory}</p>
         <p 
           className="text-xs"
           style={{ color: theme === "dark" ? "#71717A" : "#71717A" }}
-        >Created {video.createdAgo}</p>
+        >Created {createdAgo}</p>
+        
+        {video.error_message && (
+          <div className="mt-2 p-2 rounded bg-red-500/20 border border-red-500">
+            <p className="text-xs text-red-300">{video.error_message}</p>
+          </div>
+        )}
       </CardContent>
+      
       <CardFooter className="p-0 pt-3 sm:pt-4" style={{ gap: '20px' }}>
-        <Button 
-          className="flex-1 bg-[#3B82F6] text-white! hover:bg-[#3B82F6]/90 h-9 sm:h-10 md:h-11 text-xs sm:text-sm md:text-base" 
-          style={{ border: 'none', color: '#FFFFFF' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            const currentPath = window.location.pathname;
-            router.push(`/video/${video.id}?from=${encodeURIComponent(currentPath)}`);
-          }}
-        >
-          <Download className="h-5 w-5" />
-          Download
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon"
-          className="h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11"
-          style={{ backgroundColor: 'transparent' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowDeleteModal(true);
-          }}
-        >
-          <Trash2 className="h-6 w-6" style={{ color: '#E33629' }} />
-        </Button>
+        {video.status === 'failed' ? (
+          <>
+            <Button 
+              className="flex-1 bg-[#F59E0B] text-white! hover:bg-[#F59E0B]/90 h-9 sm:h-10 md:h-11 text-xs sm:text-sm md:text-base" 
+              style={{ border: 'none', color: '#FFFFFF' }}
+              disabled={isRegenerating}
+              onClick={handleRegenerate}
+            >
+              <RefreshCw className={`h-5 w-5 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} />
+              {isRegenerating ? 'Regenerating...' : 'Regenerate'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11"
+              style={{ backgroundColor: 'transparent' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteModal(true);
+              }}
+            >
+              <Trash2 className="h-6 w-6" style={{ color: '#E33629' }} />
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button 
+              className="flex-1 bg-[#3B82F6] text-white! hover:bg-[#3B82F6]/90 h-9 sm:h-10 md:h-11 text-xs sm:text-sm md:text-base" 
+              style={{ border: 'none', color: '#FFFFFF' }}
+              disabled={video.status !== 'completed'}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (video.status === 'completed') {
+                  const currentPath = window.location.pathname;
+                  router.push(`/video/${video.id}?from=${encodeURIComponent(currentPath)}`);
+                }
+              }}
+            >
+              <Download className="h-5 w-5" />
+              {video.status === 'completed' ? 'Download' : 'Processing...'}
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11"
+              style={{ backgroundColor: 'transparent' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteModal(true);
+              }}
+            >
+              <Trash2 className="h-6 w-6" style={{ color: '#E33629' }} />
+            </Button>
+          </>
+        )}
       </CardFooter>
     </Card>
 
     {/* Fullscreen Video Modal */}
-    {showModal && (
+    {showModal && video.status === 'completed' && videoUrl && (
       <div
         className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 p-4"
         onClick={handleCloseModal}
@@ -175,7 +305,7 @@ export default function VideoCard({ video, onDelete }: VideoCardProps) {
             className="w-full rounded-lg shadow-2xl"
             controls
             autoPlay
-            src={video.videoUrl}
+            src={videoUrl}
           >
             Your browser does not support the video tag.
           </video>

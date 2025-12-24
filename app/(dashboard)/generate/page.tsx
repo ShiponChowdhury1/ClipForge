@@ -1,41 +1,93 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import useSWR from 'swr';
+import { videoApi } from "@/lib/api/client";
+import { Video } from "@/types";
 
 export default function GenerateVideoPage() {
   const router = useRouter();
   const { theme } = useTheme();
+  const searchParams = useSearchParams();
+  const videoId = searchParams.get('videoId');
+  
   const [progress, setProgress] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
+
+  // Fetch video status if videoId is provided
+  const { data: video } = useSWR<Video>(
+    videoId ? `/video/${videoId}` : null,
+    () => videoId ? videoApi.getVideo(videoId) : Promise.reject('No video ID'),
+    {
+      refreshInterval: videoId ? 2000 : 0, // Poll every 2 seconds
+      revalidateOnFocus: true,
+    }
+  );
+
+  // Calculate completion status
+  const isComplete = useMemo(() => {
+    return video?.status === 'completed' || progress >= 100;
+  }, [video?.status, progress]);
+
+  // Fallback: Simulate progress if no videoId
+  useEffect(() => {
+    if (!videoId) {
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 2;
+        });
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [videoId]);
+
+  // Simulate progress for processing videos
+  useEffect(() => {
+    if (video?.status === 'processing') {
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + 1;
+        });
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [video?.status]);
 
   const steps = [
-    { id: 1, label: "Generating Prompts" },
-    { id: 2, label: "Creating Image" },
-    { id: 3, label: "Creating Narration" },
-    { id: 4, label: "Building Video" },
+    { id: 1, label: "Generating Prompts", status: ['pending', 'processing', 'completed', 'failed'] },
+    { id: 2, label: "Creating Image", status: ['processing', 'completed', 'failed'] },
+    { id: 3, label: "Creating Narration", status: ['processing', 'completed', 'failed'] },
+    { id: 4, label: "Building Video", status: ['completed', 'failed'] },
   ];
 
-  // Calculate current step based on progress (derived state)
-  const currentStep = progress < 25 ? 0 : progress < 50 ? 1 : progress < 75 ? 2 : 3;
+  // Calculate current step based on progress and video status
+  const getCurrentStep = () => {
+    if (!video) {
+      return progress < 25 ? 0 : progress < 50 ? 1 : progress < 75 ? 2 : 3;
+    }
+    
+    switch (video.status) {
+      case 'pending':
+        return 0;
+      case 'processing':
+        return progress < 50 ? 1 : progress < 75 ? 2 : 3;
+      case 'completed':
+        return 4;
+      case 'failed':
+        return 0;
+      default:
+        return 0;
+    }
+  };
 
-  useEffect(() => {
-    // Simulate progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsComplete(true);
-          return 100;
-        }
-        return prev + 2;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
+  const currentStep = getCurrentStep();
 
   return (
     <div 
@@ -135,10 +187,19 @@ export default function GenerateVideoPage() {
         </div>
 
         {/* Success Message */}
-        {isComplete && (
+        {isComplete && video?.status === 'completed' && (
           <div className="mt-4 sm:mt-5 md:mt-6 rounded-lg bg-green-100 p-4 sm:p-5 md:p-6 text-center">
             <p className="text-sm sm:text-base md:text-lg font-medium text-green-800">
-              Video generation complete! Review in the next step.
+              Video generation complete! Review your video now.
+            </p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {video?.status === 'failed' && (
+          <div className="mt-4 sm:mt-5 md:mt-6 rounded-lg bg-red-100 p-4 sm:p-5 md:p-6 text-center">
+            <p className="text-sm sm:text-base md:text-lg font-medium text-red-800">
+              Video generation failed. {video.error_message || 'Please try again.'}
             </p>
           </div>
         )}
@@ -154,10 +215,16 @@ export default function GenerateVideoPage() {
           </Button>
           <Button 
             className="w-full sm:flex-1 bg-[#3B82F6] text-white! py-4 sm:py-5 md:py-6 text-sm sm:text-base hover:bg-[#2563EB]"
-            disabled={!isComplete}
-            onClick={() => router.push("/video/1")}
+            disabled={!isComplete || video?.status !== 'completed'}
+            onClick={() => {
+              if (videoId) {
+                router.push(`/video/${videoId}`);
+              } else {
+                router.push("/video/1");
+              }
+            }}
           >
-            Next
+            {isComplete && video?.status === 'completed' ? 'View Video' : 'Next'}
           </Button>
         </div>
       </div>

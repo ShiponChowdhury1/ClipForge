@@ -12,18 +12,8 @@ import { VideoStyleSelector } from "@/components/video/VideoStyleSelector";
 import { VoiceSelector } from "@/components/video/VoiceSelector";
 import { ScriptEditor } from "@/components/video/ScriptEditor";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { videos } from "@/lib/data/mock-videos";
-
-// Video data interface for API
-export interface VideoCreationData {
-  title: string;
-  category: string;
-  keywords: string;
-  videoFormat: string;
-  videoStyle: string;
-  voiceType: string;
-  script: string;
-}
+import { videoApi } from "@/lib/api/client";
+import { VideoCreateRequest, Style, Voice } from "@/types";
 
 export default function CreateVideoForm() {
   const router = useRouter();
@@ -37,25 +27,70 @@ export default function CreateVideoForm() {
   // Form state
   const [videoTitle, setVideoTitle] = useState("");
   const [category, setCategory] = useState("");
-  const [positiveKeywords, setPositiveKeywords] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [videoFormat, setVideoFormat] = useState("9:16");
-  const [selectedStyle, setSelectedStyle] = useState("anime");
-  const [selectedVoice, setSelectedVoice] = useState("griffin");
+  const [positiveKeywords, setPositiveKeywords] = useState<string[]>([]);
+  const [negativeKeywords, setNegativeKeywords] = useState<string[]>([]);
+  const [videoFormat, setVideoFormat] = useState("1280x720");
+  const [selectedStyle, setSelectedStyle] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState("");
   const [script, setScript] = useState("");
+  const [duration, setDuration] = useState(8);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // API data
+  const [styles, setStyles] = useState<Style[]>([]);
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
+
+  // Load styles and voices from API
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setIsLoadingOptions(true);
+        const [stylesData, voicesData] = await Promise.all([
+          videoApi.listStyles(),
+          videoApi.listVoices(),
+        ]);
+        setStyles(stylesData);
+        setVoices(voicesData);
+        
+        // Set defaults
+        if (stylesData.length > 0 && !selectedStyle) {
+          setSelectedStyle(stylesData[0].id);
+        }
+        if (voicesData.length > 0 && !selectedVoice) {
+          setSelectedVoice(voicesData[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch options:', err);
+        toast.error('Failed to load styles and voices');
+      } finally {
+        setIsLoadingOptions(false);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   // Load video data if editing
   useEffect(() => {
     if (isEditMode && editId) {
-      const video = videos.find(v => v.id === editId);
-      if (video) {
-        setVideoTitle(video.title);
-        setCategory(video.category);
-        setKeywords("Fight"); // Default keywords
-        setSelectedStyle(video.category.toLowerCase());
-        // Load other fields as needed
-      }
+      const loadVideo = async () => {
+        try {
+          const video = await videoApi.getVideo(editId);
+          setVideoTitle(video.title);
+          setScript(video.script);
+          setSelectedStyle(video.style);
+          setSelectedVoice(video.voice);
+          if (video.size) setVideoFormat(video.size);
+          if (video.duration) setDuration(video.duration);
+          if (video.keywords) setPositiveKeywords(video.keywords);
+          if (video.negative_keywords) setNegativeKeywords(video.negative_keywords);
+        } catch (err) {
+          console.error('Failed to load video:', err);
+          toast.error('Failed to load video data');
+        }
+      };
+      loadVideo();
     }
   }, [isEditMode, editId]);
 
@@ -66,24 +101,29 @@ export default function CreateVideoForm() {
       toast.error("Please enter a video title");
       return;
     }
-    if (!category.trim()) {
-      toast.error("Please enter a video category");
-      return;
-    }
     if (!script.trim()) {
       toast.error("Please enter a video script");
       return;
     }
+    if (!selectedStyle) {
+      toast.error("Please select a video style");
+      return;
+    }
+    if (!selectedVoice) {
+      toast.error("Please select a voice");
+      return;
+    }
 
     // Prepare data for API
-    const videoData: VideoCreationData = {
+    const videoData: VideoCreateRequest = {
       title: videoTitle,
-      category: category,
-      keywords: keywords,
-      videoFormat: videoFormat,
-      videoStyle: selectedStyle,
-      voiceType: selectedVoice,
-      script: script
+      script: script,
+      style: selectedStyle,
+      voice: selectedVoice,
+      size: videoFormat,
+      duration: duration,
+      keywords: positiveKeywords,
+      negative_keywords: negativeKeywords,
     };
 
     console.log("Video Creation Data:", videoData);
@@ -91,38 +131,19 @@ export default function CreateVideoForm() {
     try {
       setIsSubmitting(true);
       
-      // TODO: Replace with actual API endpoint
-      // const response = await fetch('/api/create-video', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(videoData)
-      // });
-      // 
-      // if (!response.ok) {
-      //   throw new Error('Failed to create video');
-      // }
-      // 
-      // const result = await response.json();
-      // console.log('Video created:', result);
-
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await videoApi.createVideo(videoData);
+      console.log('Video created:', result);
       
-      if (isEditMode) {
-        toast.success("Video updated successfully!");
-      } else {
-        toast.success("Video creation started successfully!");
-      }
+      toast.success("Video creation started successfully!");
       
-      // Navigate to generate page
+      // Navigate to generate page with video ID
       setTimeout(() => {
-        router.push("/generate");
+        router.push(`/generate?videoId=${result.id}`);
       }, 500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating video:", error);
-      toast.error("Failed to create video. Please try again.");
+      const errorMsg = error.response?.data?.detail || error.message || "Failed to create video";
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -131,6 +152,15 @@ export default function CreateVideoForm() {
   // Handle cancel
   const handleCancel = () => {
     router.back();
+  };
+
+  // Helper functions for keyword inputs
+  const handlePositiveKeywordsChange = (value: string) => {
+    setPositiveKeywords(value.split(',').map(k => k.trim()).filter(k => k));
+  };
+
+  const handleNegativeKeywordsChange = (value: string) => {
+    setNegativeKeywords(value.split(',').map(k => k.trim()).filter(k => k));
   };
 
   return (
@@ -156,55 +186,113 @@ export default function CreateVideoForm() {
         </button>
       </div>
 
-      <TitleInput value={videoTitle} onChange={setVideoTitle} />
-      
-      <KeywordsInput value={category} onChange={setCategory} />
-      
-      <PositiveKeywordsInput value={positiveKeywords} onChange={setPositiveKeywords} />
-      
-      <NegativeKeywordsInput value={keywords} onChange={setKeywords} />
-      
-      <VideoFormatSelector selectedFormat={videoFormat} onFormatChange={setVideoFormat} />
-      
-      <VideoStyleSelector selectedStyle={selectedStyle} onStyleChange={setSelectedStyle} />
-      
-      <VoiceSelector selectedVoice={selectedVoice} onVoiceChange={setSelectedVoice} />
-      
-      <ScriptEditor value={script} onChange={setScript} />
-      
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <button
-          onClick={handleCancel}
-          disabled={isSubmitting}
-          className="w-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-          style={{
-            minHeight: '44px',
-            height: '48px',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            backgroundColor: theme === "dark" ? "#3F3F46" : "#E4E4E7",
-            color: theme === "dark" ? "#D4D4D8" : "#3F3F46",
-            border: theme === "dark" ? "1px solid #52525B" : "1px solid #D4D4D8"
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateVideo}
-          disabled={isSubmitting}
-          className="w-full font-medium transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm sm:text-base"
-          style={{
-            minHeight: '44px',
-            height: '48px',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            backgroundColor: "#3B82F6",
-            color: "#FFFFFF"
-          }}
-        >
-          {isSubmitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update & Generate" : "Create Video")}
-        </button>
-      </div>
+      {isLoadingOptions ? (
+        <div className="flex items-center justify-center py-20">
+          <div style={{ color: theme === "dark" ? "#FEFEFE" : "#000000" }} className="text-lg">
+            Loading options...
+          </div>
+        </div>
+      ) : (
+        <>
+          <TitleInput value={videoTitle} onChange={setVideoTitle} />
+          
+          <KeywordsInput value={category} onChange={setCategory} />
+          
+          <PositiveKeywordsInput 
+            value={positiveKeywords.join(', ')} 
+            onChange={handlePositiveKeywordsChange} 
+          />
+          
+          <NegativeKeywordsInput 
+            value={negativeKeywords.join(', ')} 
+            onChange={handleNegativeKeywordsChange} 
+          />
+          
+          <VideoFormatSelector selectedFormat={videoFormat} onFormatChange={setVideoFormat} />
+          
+          {/* Duration Selector */}
+          <div className="mb-4 sm:mb-5 md:mb-6">
+            <label 
+              className="mb-2 sm:mb-3 block text-xs sm:text-sm md:text-base font-medium"
+              style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
+            >
+              Target Duration (seconds) *
+            </label>
+            <select
+              value={duration}
+              onChange={(e) => setDuration(parseInt(e.target.value))}
+              className="w-full text-xs sm:text-sm md:text-base font-medium transition-colors"
+              style={{
+                minHeight: '44px',
+                height: '48px',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                backgroundColor: theme === "dark" ? "#18181B" : "#F4F4F5",
+                color: theme === "dark" ? "#FAFAFA" : "#000000",
+                border: theme === "dark" ? "1px solid #3F3F46" : "1px solid #D4D4D8",
+                outline: 'none'
+              }}
+            >
+              <option value="4">4 seconds (Quick clip)</option>
+              <option value="8">8 seconds (Standard)</option>
+              <option value="15">15 seconds (Short ad)</option>
+              <option value="30">30 seconds (Commercial)</option>
+              <option value="45">45 seconds (Extended)</option>
+              <option value="60">60 seconds (1 minute)</option>
+              <option value="90">90 seconds (Long-form)</option>
+              <option value="120">120 seconds (2 minutes)</option>
+            </select>
+          </div>
+          
+          <VideoStyleSelector 
+            selectedStyle={selectedStyle} 
+            onStyleChange={setSelectedStyle}
+            styles={styles}
+          />
+          
+          <VoiceSelector 
+            selectedVoice={selectedVoice} 
+            onVoiceChange={setSelectedVoice}
+            voices={voices}
+          />
+          
+          <ScriptEditor value={script} onChange={setScript} />
+          
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <button
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className="w-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              style={{
+                minHeight: '44px',
+                height: '48px',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                backgroundColor: theme === "dark" ? "#3F3F46" : "#E4E4E7",
+                color: theme === "dark" ? "#D4D4D8" : "#3F3F46",
+                border: theme === "dark" ? "1px solid #52525B" : "1px solid #D4D4D8"
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreateVideo}
+              disabled={isSubmitting}
+              className="w-full font-medium transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm sm:text-base"
+              style={{
+                minHeight: '44px',
+                height: '48px',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                backgroundColor: "#3B82F6",
+                color: "#FFFFFF"
+              }}
+            >
+              {isSubmitting ? "Creating..." : (isEditMode ? "Update & Generate" : "Create Video")}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
