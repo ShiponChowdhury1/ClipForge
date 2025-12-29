@@ -26,10 +26,10 @@ export default function VideoCard({ video, onDelete, onRegenerate }: VideoCardPr
   const videoRef = useRef<HTMLVideoElement>(null);
   const fullscreenVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Get video URL - support both old and new structure
-  const videoUrl = video.video_path 
-    ? videoApi.getVideoUrl(video.video_path)
-    : video.videoUrl || '';
+  // Get video URL - use download endpoint by video ID
+  const videoUrl = video.status === 'completed' 
+    ? videoApi.getVideoUrlById(video.id)
+    : '';
   
   // Get thumbnail URL if available
   const thumbnailUrl = video.thumbnail_path
@@ -80,13 +80,14 @@ export default function VideoCard({ video, onDelete, onRegenerate }: VideoCardPr
     
     setIsRegenerating(true);
     try {
-      await videoApi.regenerateVideo(video.id);
+      // TODO: Implement regenerate API endpoint
+      console.log('Regenerate not implemented yet for video:', video.id);
+      alert('Regenerate feature is not available in the current API');
+      
       // Call parent callback if provided
       if (onRegenerate) {
         onRegenerate(video.id);
       }
-      // Refresh the page to see updated status
-      window.location.reload();
     } catch (error) {
       console.error('Failed to regenerate video:', error);
       alert('Failed to regenerate video. Please try again.');

@@ -13,7 +13,15 @@ import { VoiceSelector } from "@/components/video/VoiceSelector";
 import { ScriptEditor } from "@/components/video/ScriptEditor";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { videoApi } from "@/lib/api/client";
-import { VideoCreateRequest, Style, Voice } from "@/types";
+import { VideoCreateRequest } from "@/types";
+
+type ConfigData = {
+  video_formats: string[];
+  video_styles: string[];
+  voice_types: string[];
+  max_script_length: number;
+  image_count: number;
+};
 
 export default function CreateVideoForm() {
   const router = useRouter();
@@ -33,39 +41,41 @@ export default function CreateVideoForm() {
   const [selectedStyle, setSelectedStyle] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("");
   const [script, setScript] = useState("");
-  const [duration, setDuration] = useState(8);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // API data
-  const [styles, setStyles] = useState<Style[]>([]);
-  const [voices, setVoices] = useState<Voice[]>([]);
 
-  // Load styles and voices from API (optimized - don't block UI)
+  // Config API data
+  const [videoFormats, setVideoFormats] = useState<string[]>(["9:16", "16:9", "1:1"]);
+  const [videoStyles, setVideoStyles] = useState<string[]>([]);
+  const [voiceTypes, setVoiceTypes] = useState<string[]>([]);
+  // maxScriptLength and imageCount are available if needed for validation/UI
+
+  // Load config from API
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchConfig = async () => {
       try {
-        const [stylesData, voicesData] = await Promise.all([
-          videoApi.listStyles(),
-          videoApi.listVoices(),
-        ]);
-        setStyles(stylesData);
-        setVoices(voicesData);
-        
+        const config: ConfigData = await videoApi.fetchConfig();
+        setVideoFormats(config.video_formats);
+        setVideoStyles(config.video_styles);
+        setVoiceTypes(config.voice_types);
+        // config.max_script_length and config.image_count available if needed
         // Set defaults only if not already set
-        if (stylesData.length > 0 && !selectedStyle) {
-          setSelectedStyle(stylesData[0].id);
+        if (config.video_styles.length > 0 && !selectedStyle) {
+          setSelectedStyle(config.video_styles[0]);
         }
-        if (voicesData.length > 0 && !selectedVoice) {
-          setSelectedVoice(voicesData[0].id);
+        if (config.voice_types.length > 0 && !selectedVoice) {
+          setSelectedVoice(config.voice_types[0]);
+        }
+        if (config.video_formats.length > 0 && !videoFormat) {
+          setVideoFormat(config.video_formats[0]);
         }
       } catch (err) {
-        console.error('Failed to fetch options:', err);
-        // Don't show error toast, just use fallback data
+        console.error('Failed to fetch config:', err);
       }
     };
-
-    fetchOptions();
-  }, [selectedStyle, selectedVoice]);
+    fetchConfig();
+  }, [selectedStyle, selectedVoice, videoFormat]);
 
   // Load video data if editing
   useEffect(() => {
@@ -77,10 +87,10 @@ export default function CreateVideoForm() {
           setScript(video.script);
           setSelectedStyle(video.style);
           setSelectedVoice(video.voice);
-          if (video.size) setVideoFormat(video.size);
-          if (video.duration) setDuration(video.duration);
-          if (video.keywords) setPositiveKeywords(video.keywords);
-          if (video.negative_keywords) setNegativeKeywords(video.negative_keywords);
+          if (video.format) setVideoFormat(video.format);
+          // Convert keywords from string to array
+          if (video.keywords) setPositiveKeywords(video.keywords.split(',').map(k => k.trim()).filter(k => k));
+          if (video.negative_keywords) setNegativeKeywords(video.negative_keywords.split(',').map(k => k.trim()).filter(k => k));
         } catch (err) {
           console.error('Failed to load video:', err);
           toast.error('Failed to load video data');
@@ -113,13 +123,13 @@ export default function CreateVideoForm() {
     // Prepare data for API
     const videoData: VideoCreateRequest = {
       title: videoTitle,
-      script: script,
+      category: category,
+      format: videoFormat,
       style: selectedStyle,
       voice: selectedVoice,
-      size: videoFormat,
-      duration: duration,
-      keywords: positiveKeywords,
-      negative_keywords: negativeKeywords,
+      script: script,
+      keywords: positiveKeywords.join(', '),
+      negative_keywords: negativeKeywords.join(', '),
     };
 
     console.log("Video Creation Data:", videoData);
@@ -198,52 +208,20 @@ export default function CreateVideoForm() {
             onChange={handleNegativeKeywordsChange} 
           />
           
-          <VideoFormatSelector selectedFormat={videoFormat} onFormatChange={setVideoFormat} />
+          <VideoFormatSelector selectedFormat={videoFormat} onFormatChange={setVideoFormat} availableFormats={videoFormats} />
           
-          {/* Duration Selector */}
-          <div className="mb-4 sm:mb-5 md:mb-6">
-            <label 
-              className="mb-2 sm:mb-3 block text-xs sm:text-sm md:text-base font-medium"
-              style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-            >
-              Target Duration (seconds) *
-            </label>
-            <select
-              value={duration}
-              onChange={(e) => setDuration(parseInt(e.target.value))}
-              className="w-full text-xs sm:text-sm md:text-base font-medium transition-colors"
-              style={{
-                minHeight: '44px',
-                height: '48px',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                backgroundColor: theme === "dark" ? "#18181B" : "#F4F4F5",
-                color: theme === "dark" ? "#FAFAFA" : "#000000",
-                border: theme === "dark" ? "1px solid #3F3F46" : "1px solid #D4D4D8",
-                outline: 'none'
-              }}
-            >
-              <option value="4">4 seconds (Quick clip)</option>
-              <option value="8">8 seconds (Standard)</option>
-              <option value="15">15 seconds (Short ad)</option>
-              <option value="30">30 seconds (Commercial)</option>
-              <option value="45">45 seconds (Extended)</option>
-              <option value="60">60 seconds (1 minute)</option>
-              <option value="90">90 seconds (Long-form)</option>
-              <option value="120">120 seconds (2 minutes)</option>
-            </select>
-          </div>
+    
           
           <VideoStyleSelector 
             selectedStyle={selectedStyle} 
             onStyleChange={setSelectedStyle}
-            styles={styles}
+            availableStyles={videoStyles}
           />
           
           <VoiceSelector 
             selectedVoice={selectedVoice} 
             onVoiceChange={setSelectedVoice}
-            voices={voices}
+            availableVoices={voiceTypes}
           />
           
           <ScriptEditor value={script} onChange={setScript} />

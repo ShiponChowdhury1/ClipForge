@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://6ljz73mw-8000.inc1.devtunnels.ms';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://10.10.12.26:8000';
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +11,8 @@ export async function GET(
   const searchParams = request.nextUrl.searchParams.toString();
   const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
+  console.log('Proxy GET request to:', url);
+
   try {
     const response = await fetch(url, {
       method: 'GET',
@@ -19,7 +21,11 @@ export async function GET(
       },
     });
 
+    console.log('Backend response status:', response.status);
+
     const data = await response.json();
+    console.log('Backend data:', JSON.stringify(data).substring(0, 200));
+    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Proxy error:', error);

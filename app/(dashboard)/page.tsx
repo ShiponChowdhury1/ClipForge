@@ -40,8 +40,8 @@ export default function DashboardPage() {
 
   const handleDownload = (id: string) => {
     const video = videos?.find(v => v.id === id);
-    if (video && video.video_path) {
-      const url = videoApi.getVideoUrl(video.video_path);
+    if (video && video.status === 'completed') {
+      const url = videoApi.getVideoUrlById(id);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${video.title}.mp4`;
@@ -97,7 +97,7 @@ export default function DashboardPage() {
           >
             <p className="font-semibold mb-2">⚠️ Unable to connect to backend API</p>
             <p className="text-sm">Please make sure your backend server is running at:</p>
-            <p className="text-sm font-mono mt-1">https://6ljz73mw-8000.inc1.devtunnels.ms</p>
+            <p className="text-sm font-mono mt-1">http://10.10.12.26:8000</p>
           </div>
         ) : recentVideos.length === 0 ? (
           <div className="text-center py-20">

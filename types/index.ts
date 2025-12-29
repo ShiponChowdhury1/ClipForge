@@ -1,22 +1,23 @@
 // Backend API Types
 export interface Video {
-  id: string;
+  id: number | string;
   title: string;
   script: string;
   style: string;
   voice: string;
-  size?: string;
+  category?: string;
+  format?: string;
   duration?: number;
-  keywords?: string[];
-  negative_keywords?: string[];
+  keywords?: string;
+  negative_keywords?: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  video_path?: string;
+  path?: string; // API returns 'path'
+  video_path?: string; // For frontend compatibility
   thumbnail_path?: string;
   error_message?: string;
   created_at?: string;
   updated_at?: string;
   // Legacy fields for UI compatibility
-  category?: string;
   thumbnail?: string;
   videoUrl?: string;
   createdAgo?: string;
@@ -24,13 +25,13 @@ export interface Video {
 
 export interface VideoCreateRequest {
   title: string;
-  script: string;
+  category: string;
+  format: string;
   style: string;
   voice: string;
-  size?: string;
-  duration?: number;
-  keywords?: string[];
-  negative_keywords?: string[];
+  script: string;
+  keywords: string;
+  negative_keywords: string;
 }
 
 export interface Style {
