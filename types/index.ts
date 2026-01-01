@@ -32,6 +32,23 @@ export interface VideoCreateRequest {
   script: string;
   keywords: string;
   negative_keywords: string;
+  caption_settings?: CaptionSettings;
+}
+
+export interface CaptionSettings {
+  position?: 'bottom-center' | 'top-center' | 'middle-center';
+  margin_bottom?: string; // e.g., "12%" or "120px"
+  margin_top?: string;
+  margin_sides?: string; // e.g., "8%" or "80px"
+  font_size?: string; // e.g., "5%" or "50px"
+  background?: string; // e.g., "rgba(0,0,0,0.75)"
+  text_color?: string; // e.g., "#FFFFFF"
+  font_weight?: 'normal' | 'bold' | '600' | '700';
+  max_width?: string; // e.g., "85%" or "800px"
+  padding?: string; // e.g., "12px 24px"
+  line_height?: number; // e.g., 1.3
+  border_radius?: string; // e.g., "8px"
+  text_shadow?: string; // e.g., "2px 2px 4px rgba(0,0,0,0.9)"
 }
 
 export interface Style {

@@ -50,10 +50,15 @@ export const videoApi = {
   },
 
   // Create new video
-  createVideo: async (data: VideoCreateRequest): Promise<Video> => {
+  createVideo: async (data: VideoCreateRequest): Promise<{ id: string; job_id: string; message: string }> => {
     try {
       const response = await apiClient.post<any>(API_CONFIG.ENDPOINTS.CREATE_VIDEO, data);
-      return normalizeVideo(response.data);
+      // API returns job_id, not id
+      return {
+        id: response.data.job_id, // Use job_id as the id
+        job_id: response.data.job_id,
+        message: response.data.message,
+      };
     } catch (error) {
       console.error('Error creating video:', error);
       throw error;

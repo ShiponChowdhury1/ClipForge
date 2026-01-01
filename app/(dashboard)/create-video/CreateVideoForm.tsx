@@ -130,9 +130,36 @@ export default function CreateVideoForm() {
       script: script,
       keywords: positiveKeywords.join(', '),
       negative_keywords: negativeKeywords.join(', '),
+      // Optimal caption settings to prevent text clipping
+      caption_settings: {
+        position: 'bottom-center',
+        margin_bottom: '20%',     // Increased! Safe distance above player controls
+        margin_sides: '10%',      // Safe distance from left/right edges
+        font_size: '4.5%',        // Slightly smaller for better fit
+        background: 'rgba(0,0,0,0.8)',   // Darker background for visibility
+        text_color: '#FFFFFF',    // White text for maximum contrast
+        font_weight: 'bold',      // Bold for better readability
+        max_width: '80%',         // Prevent text from touching edges
+        padding: '10px 20px',     // Internal padding for breathing room
+        line_height: 1.4,         // Proper line spacing
+        border_radius: '6px',     // Rounded corners for modern look
+        text_shadow: '2px 2px 4px rgba(0,0,0,0.9), -2px -2px 4px rgba(0,0,0,0.9), 2px -2px 4px rgba(0,0,0,0.9), -2px 2px 4px rgba(0,0,0,0.9)'  // Multi-direction shadow for visibility on any background
+      }
     };
 
-    console.log("Video Creation Data:", videoData);
+    // Console log all video creation data
+    console.log("========== VIDEO CREATION DATA ==========");
+    console.log("Title:", videoTitle);
+    console.log("Category:", category);
+    console.log("Format:", videoFormat);
+    console.log("Style:", selectedStyle);
+    console.log("Voice:", selectedVoice);
+    console.log("Script:", script);
+    console.log("Positive Keywords:", positiveKeywords);
+    console.log("Negative Keywords:", negativeKeywords);
+    console.log("Caption Settings:", videoData.caption_settings);
+    console.log("Full Request Object:", JSON.stringify(videoData, null, 2));
+    console.log("==========================================");;
 
     try {
       setIsSubmitting(true);

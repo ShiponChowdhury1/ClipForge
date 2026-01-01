@@ -12,19 +12,35 @@ export default function GenerateVideoPage() {
   const router = useRouter();
   const { theme } = useTheme();
   const searchParams = useSearchParams();
-  const videoId = searchParams.get('videoId');
+  const videoId = searchParams.get('videoId'); // This is actually job_id from create-video response
   
   const [progress, setProgress] = useState(0);
 
-  // Fetch video status if videoId is provided
-  const { data: video } = useSWR<Video>(
-    videoId ? `/video/${videoId}` : null,
-    () => videoId ? videoApi.getVideo(videoId) : Promise.reject('No video ID'),
+  // Fetch job status if videoId is provided (videoId is actually job_id)
+  const { data: jobStatus } = useSWR(
+    videoId ? `/job-status/${videoId}` : null,
+    () => videoId ? videoApi.getJobStatus(videoId) : Promise.reject('No video ID'),
     {
       refreshInterval: videoId ? 2000 : 0, // Poll every 2 seconds
       revalidateOnFocus: true,
     }
   );
+
+  // Map job status to video-like object for compatibility
+  const video = useMemo(() => {
+    if (!jobStatus) return null;
+    
+    console.log("Job Status Response:", jobStatus);
+    console.log("Status:", jobStatus.status);
+    
+    return {
+      id: videoId,
+      status: jobStatus.status || 'pending',
+      title: jobStatus.title || 'Video Generation',
+      path: jobStatus.video_path,
+      ...jobStatus,
+    } as Video;
+  }, [jobStatus, videoId]);
 
   // Calculate completion status
   const isComplete = useMemo(() => {
@@ -52,11 +68,17 @@ export default function GenerateVideoPage() {
     if (video?.status === 'processing') {
       const interval = setInterval(() => {
         setProgress(prev => {
-          if (prev >= 90) return prev;
+          if (prev >= 95) return 95; // Stop at 95% during processing
           return prev + 1;
         });
       }, 500);
       return () => clearInterval(interval);
+    } else if (video?.status === 'completed') {
+      // Jump to 100% when completed
+      setProgress(100);
+    } else if (video?.status === 'failed') {
+      // Reset on failure
+      setProgress(0);
     }
   }, [video?.status]);
 

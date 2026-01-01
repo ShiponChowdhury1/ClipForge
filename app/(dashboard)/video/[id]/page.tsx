@@ -1,10 +1,14 @@
 "use client";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Download, RotateCcw, Edit } from "lucide-react";
+import { ArrowLeft, Download, RotateCcw, Edit, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { videos } from "@/lib/data/mock-videos";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { toast } from "react-toastify";
+import useSWR from "swr";
+import { videoApi } from "@/lib/api/client";
+import { Video } from "@/types";
+import { API_CONFIG } from "@/lib/api/config";
+import { useMemo } from "react";
 
 export default function VideoDetailsPage() {
   const router = useRouter();
@@ -12,15 +16,67 @@ export default function VideoDetailsPage() {
   const { theme } = useTheme();
   const videoId = params.id as string;
   
+  // Check if the ID is a job_id (UUID format) or a regular video ID
+  const isJobId = useMemo(() => {
+    // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidPattern.test(videoId);
+  }, [videoId]);
+  
   // Get the referrer from URL query params
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const from = searchParams.get('from') || '/';
   
-  const video = videos.find((v) => v.id === videoId);
+  // Fetch job status if it's a job_id, otherwise fetch video directly
+  const { data: jobStatus, error: jobError, isLoading: jobLoading } = useSWR(
+    isJobId && videoId ? `/api/job-status/${videoId}` : null,
+    () => videoApi.getJobStatus(videoId)
+  );
   
-  if (!video) {
-    return <div>Video not found</div>;
-  }
+  const { data: videoData, error: videoError, isLoading: videoLoading } = useSWR<Video>(
+    !isJobId && videoId ? `/api/video/${videoId}` : null,
+    () => videoApi.getVideo(videoId)
+  );
+  
+  // Map job status to video object or use direct video data
+  const video = useMemo(() => {
+    if (isJobId && jobStatus) {
+      console.log("Job Status for video page:", jobStatus);
+      return {
+        id: jobStatus.video_id || videoId,
+        job_id: videoId,
+        title: jobStatus.title || 'Generated Video',
+        status: jobStatus.status,
+        path: jobStatus.video_path,
+        video_path: jobStatus.video_path,
+        thumbnail: jobStatus.thumbnail_path,
+        created_at: jobStatus.created_at,
+        ...jobStatus,
+      } as Video;
+    }
+    return videoData || null;
+  }, [isJobId, jobStatus, videoData, videoId]);
+  
+  const error = isJobId ? jobError : videoError;
+  const isLoading = isJobId ? jobLoading : videoLoading;
+
+  // Get video URL for playback and download
+  const getVideoUrl = () => {
+    if (!video) return '';
+    
+    // If we have a video_path from job status, use it directly
+    if (video.video_path) {
+      // Check if it's already a full URL
+      if (video.video_path.startsWith('http')) {
+        return video.video_path;
+      }
+      // Otherwise, prepend the base URL
+      return `${API_CONFIG.BASE_URL}${video.video_path.startsWith('/') ? '' : '/'}${video.video_path}`;
+    }
+    
+    // Fallback to video ID-based URL
+    return videoApi.getVideoUrlById(video.id);
+  };
 
   // Handle Regenerate
   const handleRegenerate = () => {
@@ -36,26 +92,75 @@ export default function VideoDetailsPage() {
   };
 
   // Handle Download
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = video.videoUrl;
-    link.download = `${video.title}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Downloading video...");
+  const handleDownload = async () => {
+    if (!video) return;
+    
+    try {
+      toast.info("Starting download...");
+      
+      // Use video path directly if available, otherwise use download endpoint
+      let downloadUrl: string;
+      if (video.video_path) {
+        downloadUrl = video.video_path.startsWith('http') 
+          ? video.video_path 
+          : `${API_CONFIG.BASE_URL}${video.video_path.startsWith('/') ? '' : '/'}${video.video_path}`;
+      } else {
+        downloadUrl = `${API_CONFIG.BASE_URL}/api/download/${video.id}`;
+      }
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${video.title || 'video'}.mp4`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Download started!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download video");
+    }
   };
 
-  // Mock generated images for the video
-  const generatedImages = [
-    video.thumbnail,
-    video.thumbnail,
-    video.thumbnail,
-    video.thumbnail,
-    video.thumbnail,
-    video.thumbnail,
-    video.thumbnail,
-  ];
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader className="h-8 w-8 animate-spin" style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }} />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !video) {
+    return (
+      <div 
+        className="w-full max-w-full lg:mt-3 mx-auto p-4 sm:p-5 md:p-6 rounded-lg"
+        style={{ 
+          backgroundColor: theme === "dark" ? '#272727' : '#FFFFFF', 
+          border: theme === "dark" ? '1px solid #5E5E5E' : 'none'
+        }}
+      >
+        <div className="mb-6 flex items-center gap-2">
+          <button 
+            onClick={() => router.push(from)}
+            className="flex items-center gap-2 hover:opacity-70"
+            style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="text-lg font-semibold">Back</span>
+          </button>
+        </div>
+        <p style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}>
+          Video not found or failed to load.
+        </p>
+      </div>
+    );
+  }
+
+  const videoUrl = getVideoUrl();
 
   return (
     <div 
@@ -78,36 +183,6 @@ export default function VideoDetailsPage() {
         </button>
       </div>
 
-      {/* Generated Images */}
-      <div 
-        className="mb-4 sm:mb-5 md:mb-6 rounded-lg p-3 sm:p-4" 
-        style={{ 
-          backgroundColor: theme === "dark" ? '#272727' : '#FFFFFF', 
-          border: theme === "dark" ? '1px solid #5E5E5E' : 'none',
-          boxShadow: theme === "light" ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' : 'none'
-        }}
-      >
-        <h2 
-          className="mb-2 sm:mb-3 text-sm sm:text-base font-medium"
-          style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-        >Generated Image</h2>
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
-          {generatedImages.map((img, idx) => (
-            <div
-              key={idx}
-              className="h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-lg border"
-              style={{ borderColor: theme === "dark" ? '#5E5E5E' : '#D4D4D8' }}
-            >
-              <video
-                src={video.videoUrl}
-                className="h-full w-full object-cover"
-                muted
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Video Preview */}
       <div 
         className="mb-4 sm:mb-5 md:mb-6 rounded-lg p-3 sm:p-4" 
@@ -122,11 +197,17 @@ export default function VideoDetailsPage() {
           style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
         >Video Preview</h2>
         <div className="relative aspect-video overflow-hidden rounded-lg bg-black">
-          <video
-            src={video.videoUrl}
-            controls
-            className="h-full w-full"
-          />
+          {videoUrl ? (
+            <video
+              src={videoUrl}
+              controls
+              className="h-full w-full"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              Video not available
+            </div>
+          )}
         </div>
       </div>
 
@@ -162,7 +243,7 @@ export default function VideoDetailsPage() {
             <span 
               className="text-xs sm:text-sm"
               style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-            >Fight</span>
+            >{video.keywords || 'N/A'}</span>
           </div>
           <div className="flex flex-col sm:flex-row">
             <span 
@@ -172,7 +253,7 @@ export default function VideoDetailsPage() {
             <span 
               className="text-xs sm:text-sm"
               style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-            >Fight</span>
+            >{video.negative_keywords || 'N/A'}</span>
           </div>
           <div className="flex flex-col sm:flex-row">
             <span 
@@ -182,7 +263,7 @@ export default function VideoDetailsPage() {
             <span 
               className="text-xs sm:text-sm"
               style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-            >9:16</span>
+            >{video.format || '9:16'}</span>
           </div>
           <div className="flex flex-col sm:flex-row">
             <span 
@@ -192,7 +273,7 @@ export default function VideoDetailsPage() {
             <span 
               className="text-xs sm:text-sm"
               style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-            >{video.category}</span>
+            >{video.style || video.category || 'N/A'}</span>
           </div>
           <div className="flex flex-col sm:flex-row">
             <span 
@@ -202,10 +283,41 @@ export default function VideoDetailsPage() {
             <span 
               className="text-xs sm:text-sm"
               style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
-            >Griffin</span>
+            >{video.voice || 'N/A'}</span>
+          </div>
+          <div className="flex flex-col sm:flex-row">
+            <span 
+              className="w-full sm:w-40 md:w-48 text-xs sm:text-sm font-medium sm:font-normal mb-1 sm:mb-0"
+              style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}
+            >Status:</span>
+            <span 
+              className="text-xs sm:text-sm capitalize"
+              style={{ color: video.status === 'completed' ? '#22c55e' : video.status === 'failed' ? '#ef4444' : theme === "dark" ? "#FAFAFA" : "#000000" }}
+            >{video.status}</span>
           </div>
         </div>
       </div>
+
+      {/* Script Section */}
+      {video.script && (
+        <div 
+          className="mb-4 sm:mb-5 md:mb-6 rounded-lg p-3 sm:p-4" 
+          style={{ 
+            backgroundColor: theme === "dark" ? '#272727' : '#FFFFFF', 
+            border: theme === "dark" ? '1px solid #5E5E5E' : 'none',
+            boxShadow: theme === "light" ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' : 'none'
+          }}
+        >
+          <h2 
+            className="mb-3 sm:mb-4 text-sm sm:text-base font-medium"
+            style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
+          >Script</h2>
+          <p 
+            className="text-xs sm:text-sm whitespace-pre-wrap"
+            style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}
+          >{video.script}</p>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -227,7 +339,8 @@ export default function VideoDetailsPage() {
         </Button>
         <Button 
           onClick={handleDownload}
-          className="w-full sm:flex-1 bg-[#3B82F6] text-white! py-4 sm:py-5 md:py-6 text-xs sm:text-sm hover:bg-[#3B82F6]/90"
+          disabled={video.status !== 'completed'}
+          className="w-full sm:flex-1 bg-[#3B82F6] text-white! py-4 sm:py-5 md:py-6 text-xs sm:text-sm hover:bg-[#3B82F6]/90 disabled:opacity-50"
         >
           <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
           Download

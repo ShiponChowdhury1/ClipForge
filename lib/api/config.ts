@@ -1,6 +1,6 @@
 // Use proxy route to avoid CORS issues
 // Set to false if backend has CORS headers configured
-const USE_PROXY = false;
+const USE_PROXY = true;  // Enable proxy to avoid CORS network errors
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://10.10.12.26:8000';
 const BASE_PATH = USE_PROXY ? '/api/proxy' : '';
 

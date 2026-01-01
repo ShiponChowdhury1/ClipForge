@@ -86,7 +86,7 @@ export default function VideoCard({ video, onDelete, onRegenerate }: VideoCardPr
       
       // Call parent callback if provided
       if (onRegenerate) {
-        onRegenerate(video.id);
+        onRegenerate(String(video.id));
       }
     } catch (error) {
       console.error('Failed to regenerate video:', error);
@@ -340,7 +340,7 @@ export default function VideoCard({ video, onDelete, onRegenerate }: VideoCardPr
               className="flex-1 bg-blue-600 hover:bg-blue-700"
               onClick={() => {
                 setShowDeleteModal(false);
-                onDelete?.(video.id);
+                onDelete?.(String(video.id));
               }}
             >
               Delete

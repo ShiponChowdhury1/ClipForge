@@ -23,14 +23,26 @@ export async function GET(
 
     console.log('Backend response status:', response.status);
 
-    const data = await response.json();
-    console.log('Backend data:', JSON.stringify(data).substring(0, 200));
+    // Get response as text first to handle non-JSON responses
+    const text = await response.text();
+    console.log('Backend response text (first 200 chars):', text.substring(0, 200));
     
-    return NextResponse.json(data, { status: response.status });
+    // Try to parse as JSON
+    try {
+      const data = JSON.parse(text);
+      return NextResponse.json(data, { status: response.status });
+    } catch {
+      // If not JSON, return the text as an error message
+      console.error('Backend returned non-JSON response:', text.substring(0, 500));
+      return NextResponse.json(
+        { error: 'Backend returned non-JSON response', details: text.substring(0, 200) },
+        { status: response.status || 500 }
+      );
+    }
   } catch (error) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch from backend' },
+      { error: 'Failed to fetch from backend', details: String(error) },
       { status: 500 }
     );
   }
@@ -43,9 +55,13 @@ export async function POST(
   const { path: pathArray } = await params;
   const path = pathArray.join('/');
   const url = `${BACKEND_URL}/${path}`;
-  const body = await request.json();
+  
+  console.log('Proxy POST request to:', url);
 
   try {
+    const body = await request.json();
+    console.log('POST body:', JSON.stringify(body).substring(0, 200));
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -54,12 +70,26 @@ export async function POST(
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    console.log('Backend POST response status:', response.status);
+
+    // Get response as text first to handle non-JSON responses
+    const text = await response.text();
+    console.log('Backend POST response text (first 200 chars):', text.substring(0, 200));
+    
+    try {
+      const data = JSON.parse(text);
+      return NextResponse.json(data, { status: response.status });
+    } catch {
+      console.error('Backend returned non-JSON response:', text.substring(0, 500));
+      return NextResponse.json(
+        { error: 'Backend returned non-JSON response', details: text.substring(0, 200) },
+        { status: response.status || 500 }
+      );
+    }
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error('Proxy POST error:', error);
     return NextResponse.json(
-      { error: 'Failed to post to backend' },
+      { error: 'Failed to post to backend', details: String(error) },
       { status: 500 }
     );
   }
