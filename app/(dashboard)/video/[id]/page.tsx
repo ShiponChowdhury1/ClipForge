@@ -41,9 +41,23 @@ export default function VideoDetailsPage() {
   // Map job status to video object or use direct video data
   const video = useMemo(() => {
     if (isJobId && jobStatus) {
-      console.log("Job Status for video page:", jobStatus);
+      console.log("========== JOB STATUS DEBUG ==========");
+      console.log("Full Job Status Response:", JSON.stringify(jobStatus, null, 2));
+      console.log("video_id:", jobStatus.video_id);
+      console.log("title:", jobStatus.title);
+      console.log("keywords:", jobStatus.keywords);
+      console.log("negative_keywords:", jobStatus.negative_keywords);
+      console.log("format:", jobStatus.format);
+      console.log("style:", jobStatus.style);
+      console.log("category:", jobStatus.category);
+      console.log("voice:", jobStatus.voice);
+      console.log("script:", jobStatus.script);
+      console.log("======================================");
+      
+      // Extract all fields from job status response
       return {
         id: jobStatus.video_id || videoId,
+        video_id: jobStatus.video_id,
         job_id: videoId,
         title: jobStatus.title || 'Generated Video',
         status: jobStatus.status,
@@ -51,6 +65,15 @@ export default function VideoDetailsPage() {
         video_path: jobStatus.video_path,
         thumbnail: jobStatus.thumbnail_path,
         created_at: jobStatus.created_at,
+        // Extract additional fields from job status
+        keywords: jobStatus.keywords || '',
+        negative_keywords: jobStatus.negative_keywords || '',
+        format: jobStatus.format || jobStatus.video_format || '9:16',
+        style: jobStatus.style || jobStatus.category || '',
+        category: jobStatus.category || jobStatus.style || '',
+        voice: jobStatus.voice || jobStatus.voice_type || '',
+        script: jobStatus.script || '',
+        // Include all other fields from jobStatus
         ...jobStatus,
       } as Video;
     }
@@ -337,10 +360,24 @@ export default function VideoDetailsPage() {
             className="mb-3 sm:mb-4 text-sm sm:text-base font-medium"
             style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
           >Script</h2>
-          <p 
-            className="text-xs sm:text-sm whitespace-pre-wrap"
-            style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}
-          >{video.script}</p>
+          <div 
+            className="overflow-auto"
+            style={{
+              maxHeight: '300px',
+              scrollbarWidth: 'none', // Firefox
+              msOverflowStyle: 'none', // IE and Edge
+            }}
+          >
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                display: none; /* Chrome, Safari, Opera */
+              }
+            `}</style>
+            <p 
+              className="text-xs sm:text-sm whitespace-pre-wrap"
+              style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}
+            >{video.script}</p>
+          </div>
         </div>
       )}
 
