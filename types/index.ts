@@ -1,6 +1,7 @@
 // Backend API Types
 export interface Video {
   id: number | string;
+  video_id?: number; // Backend returns video_id separately from job_id
   title: string;
   script: string;
   style: string;
@@ -43,6 +44,8 @@ export interface CaptionSettings {
   font_size?: string; // e.g., "5%" or "50px"
   background?: string; // e.g., "rgba(0,0,0,0.75)"
   text_color?: string; // e.g., "#FFFFFF"
+  text_align?: 'left' | 'center' | 'right'; // Text alignment
+  vertical_align?: 'top' | 'middle' | 'bottom'; // Vertical alignment
   font_weight?: 'normal' | 'bold' | '600' | '700';
   max_width?: string; // e.g., "85%" or "800px"
   padding?: string; // e.g., "12px 24px"

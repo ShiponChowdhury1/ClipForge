@@ -86,7 +86,27 @@ export default function AllVideosPage() {
       (video.category && video.category.toLowerCase() === filter.toLowerCase()) ||
       (video.style && video.style.toLowerCase() === filter.toLowerCase()) ||
       (video.status && video.status.toLowerCase() === filter.toLowerCase());
-    return matchesSearch && matchesFilter;
+    
+    // Date filtering
+    let matchesDate = true;
+    if (selectedDate) {
+      // Parse selected date (format: YYYY-MM-DD from input)
+      const selected = new Date(selectedDate);
+      selected.setHours(0, 0, 0, 0);
+      
+      // Parse video creation date
+      if (video.created_at) {
+        const videoDate = new Date(video.created_at);
+        videoDate.setHours(0, 0, 0, 0);
+        
+        // Match if same date
+        matchesDate = selected.getTime() === videoDate.getTime();
+      } else {
+        matchesDate = false;
+      }
+    }
+    
+    return matchesSearch && matchesFilter && matchesDate;
   });
   return (
     <>
