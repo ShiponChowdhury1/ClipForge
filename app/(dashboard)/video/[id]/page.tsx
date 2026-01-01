@@ -64,18 +64,19 @@ export default function VideoDetailsPage() {
   const getVideoUrl = () => {
     if (!video) return '';
     
-    // If we have a video_path from job status, use it directly
-    if (video.video_path) {
-      // Check if it's already a full URL
-      if (video.video_path.startsWith('http')) {
-        return video.video_path;
-      }
-      // Otherwise, prepend the base URL
-      return `${API_CONFIG.BASE_URL}${video.video_path.startsWith('/') ? '' : '/'}${video.video_path}`;
+    // Use the video_id (integer) to fetch video from backend API
+    const actualVideoId = video.video_id || video.id;
+    
+    // If we have a valid video_id, use the download endpoint to stream the video
+    if (actualVideoId && !isJobId) {
+      return `${API_CONFIG.BASE_URL}/api/download/${actualVideoId}`;
+    } else if (actualVideoId && video.video_id) {
+      // For job_id-based pages, use the video_id from job status
+      return `${API_CONFIG.BASE_URL}/api/download/${video.video_id}`;
     }
     
-    // Fallback to video ID-based URL
-    return videoApi.getVideoUrlById(video.id);
+    console.warn("No valid video ID found for playback. Video object:", video);
+    return '';
   };
 
   // Handle Regenerate
@@ -98,29 +99,53 @@ export default function VideoDetailsPage() {
     try {
       toast.info("Starting download...");
       
-      // Use video path directly if available, otherwise use download endpoint
-      let downloadUrl: string;
-      if (video.video_path) {
-        downloadUrl = video.video_path.startsWith('http') 
-          ? video.video_path 
-          : `${API_CONFIG.BASE_URL}${video.video_path.startsWith('/') ? '' : '/'}${video.video_path}`;
+      // Use video_id (integer) from job status, not job_id (UUID)
+      // Priority: video.video_id > video.id (if it's a number) > fallback to videoId
+      let videoIdForDownload: string | number;
+      
+      if (video.video_id) {
+        videoIdForDownload = video.video_id;
+      } else if (video.id && !isJobId) {
+        // If video.id is not a UUID (job_id), use it
+        videoIdForDownload = video.id;
       } else {
-        downloadUrl = `${API_CONFIG.BASE_URL}/api/download/${video.id}`;
+        // Log error and show message
+        console.error("No valid video_id found for download. Video object:", video);
+        toast.error("Video ID not available. Please wait for video processing to complete.");
+        return;
       }
+      
+      const downloadUrl = `${API_CONFIG.BASE_URL}/api/download/${videoIdForDownload}`;
+      
+      console.log("Download URL:", downloadUrl);
+      console.log("Video ID for download:", videoIdForDownload);
+      console.log("Is Job ID:", isJobId);
+      console.log("Full video object:", video);
+      
+      // Fetch the video as a blob to bypass CORS issues
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
       
       // Create a temporary link and trigger download
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      link.href = blobUrl;
       link.download = `${video.title || 'video'}.mp4`;
-      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       
-      toast.success("Download started!");
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      toast.success("Download completed!");
     } catch (error) {
       console.error("Download error:", error);
-      toast.error("Failed to download video");
+      toast.error("Failed to download video. Please try again.");
     }
   };
 

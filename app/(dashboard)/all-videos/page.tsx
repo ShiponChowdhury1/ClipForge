@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import useSWR from 'swr';
 import Header from "@/components/layout/header";
 import { AllVideosFilter } from "@/components/video/AllVideosFilter";
@@ -8,6 +8,7 @@ import { useTheme } from "@/components/providers/ThemeProvider";
 import { videoApi } from "@/lib/api/client";
 import { Video } from "@/types";
 import { toast } from "react-toastify";
+import { videos as mockVideos } from "@/lib/data/mock-videos";
 
 const fetcher = () => videoApi.listVideos();
 
@@ -18,14 +19,32 @@ export default function AllVideosPage() {
   const [selectedDate, setSelectedDate] = useState("");
 
   // Fetch videos with SWR - auto refresh every 10 seconds
-  const { data: videos, error, isLoading, mutate } = useSWR<Video[]>('/videos', fetcher, {
+  const { data: apiVideos, error, isLoading, mutate } = useSWR<Video[]>('/videos', fetcher, {
     refreshInterval: 10000,
     revalidateOnFocus: true,
-    shouldRetryOnError: false,
+    shouldRetryOnError: true,
     onError: (err) => {
       console.error('Failed to load videos:', err);
     }
   });
+
+  // Use API videos if available, fallback to mock videos on error
+  const videos = useMemo(() => {
+    // If API returned videos, use them
+    if (apiVideos && apiVideos.length > 0) {
+      console.log("Using API videos:", apiVideos.length);
+      return apiVideos;
+    }
+    
+    // If there's an error, use mock videos
+    if (error) {
+      console.log("Using mock videos due to API error");
+      return mockVideos;
+    }
+    
+    // Default to empty array while loading
+    return [];
+  }, [apiVideos, error]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this video?')) {
@@ -43,9 +62,12 @@ export default function AllVideosPage() {
   };
 
   const handleDownload = (id: string) => {
-    const video = videos?.find(v => v.id === id);
+    const video = videos?.find(v => String(v.id) === String(id));
     if (video && video.status === 'completed') {
-      const url = videoApi.getVideoUrlById(id);
+      // Use video_path for local videos, otherwise use API
+      const url = video.video_path?.startsWith('/') 
+        ? video.video_path 
+        : videoApi.getVideoUrlById(id);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${video.title}.mp4`;
