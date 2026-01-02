@@ -23,7 +23,7 @@ export function ScriptEditor({ value, onChange }: ScriptEditorProps) {
         onChange={(e) => onChange(e.target.value)}
         placeholder="Enter your script here..."
         maxLength={maxCharacters}
-        className="w-full rounded-lg border px-4 focus:outline-none"
+        className="w-full rounded-lg border px-4 py-3 focus:outline-none scrollbar-hide"
         style={{
           height: "102px",
           backgroundColor: theme === "dark" ? "#18181B" : "#F4F4F5",
