@@ -26,11 +26,16 @@ export default function VideoDetailsPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   
-  // Check if the ID is a job_id (UUID format) or a regular video ID
+  // Check if the ID is a job_id (UUID format) or a regular video ID (integer)
   const isJobId = useMemo(() => {
     // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidPattern.test(videoId);
+  }, [videoId]);
+  
+  // Check if it's a pure integer (video_id from backend)
+  const isIntegerId = useMemo(() => {
+    return /^\d+$/.test(videoId);
   }, [videoId]);
   
   // Get the referrer from URL query params
@@ -40,28 +45,100 @@ export default function VideoDetailsPage() {
   // Fetch job status if it's a job_id, otherwise fetch video directly
   const { data: jobStatus, error: jobError, isLoading: jobLoading } = useSWR(
     isJobId && videoId ? `/api/job-status/${videoId}` : null,
-    () => videoApi.getJobStatus(videoId)
+    () => videoApi.getJobStatus(videoId),
+    {
+      refreshInterval: (data) => {
+        // Keep polling if status is pending or processing
+        if (data?.status === 'pending' || data?.status === 'processing') {
+          return 2000; // Poll every 2 seconds
+        }
+        return 0; // Stop polling when completed or failed
+      },
+    }
   );
   
   // If job status has video_id, fetch full video details
-  const actualVideoId = jobStatus?.video_id;
+  // Check video_id, video.id (nested), and id since backend returns video data nested
+  const actualVideoId = jobStatus?.video_id || jobStatus?.video?.id || jobStatus?.id;
+  
+  // Check if actualVideoId is a valid integer
+  const hasValidVideoId = actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)));
   
   const { data: videoData, error: videoError, isLoading: videoLoading } = useSWR<Video>(
-    // Fetch if: NOT a job_id OR if job status returned a video_id
-    (!isJobId && videoId) || (isJobId && actualVideoId) ? `/api/video/${actualVideoId || videoId}` : null,
-    () => videoApi.getVideo(actualVideoId || videoId)
+    // Fetch if: it's an integer ID OR if job status returned a valid video_id
+    (isIntegerId && videoId) || (isJobId && hasValidVideoId) ? `/api/video/${actualVideoId || videoId}` : null,
+    () => videoApi.getVideo(String(actualVideoId || videoId)),
+    {
+      revalidateOnFocus: true,
+    }
   );
   
   // Map job status to video object or use direct video data
   const video = useMemo(() => {
+    console.log("========== VIDEO PAGE DEBUG ==========");
+    console.log("URL videoId:", videoId);
+    console.log("isJobId:", isJobId);
+    console.log("isIntegerId:", isIntegerId);
+    console.log("jobStatus:", jobStatus);
+    console.log("jobStatus.video (nested):", jobStatus?.video);
+    console.log("actualVideoId from job:", actualVideoId);
+    console.log("hasValidVideoId:", hasValidVideoId);
+    console.log("videoData:", videoData);
+    console.log("jobError:", jobError);
+    console.log("videoError:", videoError);
+    console.log("======================================");
+    
     // If we have videoData from /api/video/{id}, use it (it has full details)
     if (videoData) {
-      return {
+      console.log("✅ Using videoData, mapping fields...");
+      // API response structure:
+      // { id, title, category, format, style, voice, script, keywords, negative_keywords, path, thumbnail_path, duration, created_at, status }
+      const mappedVideo = {
         ...videoData,
-        video_id: videoData.id,
-        job_id: isJobId ? videoId : undefined,
-        // Ensure video_path is available
-        video_path: videoData.video_path || videoData.path,
+        id: videoData.id || videoData.video_id,
+        video_id: videoData.id || videoData.video_id,
+        job_id: isJobId ? videoId : (videoData.job_id || undefined),
+        title: videoData.title || videoData.video_title || 'Generated Video',
+        keywords: videoData.keywords || videoData.keyword || '',
+        negative_keywords: videoData.negative_keywords || videoData.negative_keyword || '',
+        format: videoData.format || videoData.video_format || '9:16',
+        // style = video style like "Hyper Realistic", "Anime" etc.
+        style: videoData.style || videoData.video_style || '',
+        // category = topic like "MONEY / POWER", "TECH" etc.
+        category: videoData.category || '',
+        voice: videoData.voice || videoData.voice_type || '',
+        script: videoData.script || videoData.video_script || '',
+        status: videoData.status || 'completed',
+        video_path: videoData.video_path || videoData.path || '',
+        path: videoData.path || videoData.video_path || '',
+        thumbnail: videoData.thumbnail || videoData.thumbnail_path || '',
+        created_at: videoData.created_at || videoData.created_date || new Date().toISOString(),
+      } as Video;
+      console.log("📦 Mapped video object:", mappedVideo);
+      return mappedVideo;
+    }
+    
+    // If job status has nested video object with full details, use it
+    if (isJobId && jobStatus?.video) {
+      const nestedVideo = jobStatus.video;
+      console.log("✅ Using nested video from jobStatus.video");
+      return {
+        id: nestedVideo.id,
+        video_id: nestedVideo.id,
+        job_id: videoId,
+        title: nestedVideo.title || 'Generated Video',
+        status: jobStatus.status || nestedVideo.status || 'completed',
+        path: nestedVideo.path || nestedVideo.video_path,
+        video_path: nestedVideo.video_path || nestedVideo.path,
+        thumbnail: nestedVideo.thumbnail_path || nestedVideo.thumbnail,
+        created_at: nestedVideo.created_at,
+        keywords: nestedVideo.keywords || '',
+        negative_keywords: nestedVideo.negative_keywords || '',
+        format: nestedVideo.format || '9:16',
+        style: nestedVideo.style || nestedVideo.category || '',
+        category: nestedVideo.category || nestedVideo.style || '',
+        voice: nestedVideo.voice || '',
+        script: nestedVideo.script || '',
       } as Video;
     }
     
@@ -89,25 +166,32 @@ export default function VideoDetailsPage() {
     }
     
     return null;
-  }, [isJobId, jobStatus, videoData, videoId, actualVideoId]);
+  }, [isJobId, isIntegerId, jobStatus, videoData, videoId, actualVideoId, hasValidVideoId, jobError, videoError]);
   
   const error = isJobId ? (jobError || videoError) : videoError;
-  const isLoading = isJobId ? (jobLoading || (actualVideoId && videoLoading)) : videoLoading;
+  const isLoading = isJobId ? (jobLoading || (hasValidVideoId && videoLoading)) : videoLoading;
 
-  // Memoized video URL for playback and download
+  // Memoized video URL for playback and download (using integer video_id)
   const videoUrl = useMemo(() => {
-    if (!video) return '';
-    
-    const actualVideoId = video.video_id || video.id;
-    
-    if (actualVideoId && !isJobId) {
-      return `${API_CONFIG.BASE_URL}/api/download/${actualVideoId}`;
-    } else if (actualVideoId && video.video_id) {
-      return `${API_CONFIG.BASE_URL}/api/download/${video.video_id}`;
+    if (!video) {
+      console.log("❌ No video object for URL generation");
+      return '';
     }
     
+    // Priority: use video_id (integer) from backend
+    const actualVideoId = video.video_id || video.id;
+    console.log("🎬 Video URL generation - video_id:", actualVideoId, "type:", typeof actualVideoId);
+    
+    // Only create URL if we have a valid integer ID
+    if (actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)))) {
+      const url = `${API_CONFIG.BASE_URL}/api/download/${actualVideoId}`;
+      console.log("✅ Generated video URL:", url);
+      return url;
+    }
+    
+    console.log("❌ Invalid video ID, cannot generate URL");
     return '';
-  }, [video, isJobId]);
+  }, [video]);
 
   // Navigation handlers
   const handleBack = useCallback(() => {
@@ -126,15 +210,17 @@ export default function VideoDetailsPage() {
     router.push(`/create-video?edit=${editId}`);
   }, [router, video?.video_id, videoId]);
 
-  // Handle Download with progress feedback
+  // Handle Download with progress feedback (using integer video_id)
   const handleDownload = useCallback(async () => {
     if (!video) return;
     
+    // Use integer video_id from backend (not job_id)
     let videoIdForDownload: string | number | undefined;
     
     if (video.video_id) {
       videoIdForDownload = video.video_id;
-    } else if (video.id && !isJobId) {
+    } else if (video.id && (typeof video.id === 'number' || /^\d+$/.test(String(video.id)))) {
+      // Only use video.id if it's a valid integer
       videoIdForDownload = video.id;
     }
     
@@ -173,7 +259,7 @@ export default function VideoDetailsPage() {
     } finally {
       setIsDownloading(false);
     }
-  }, [video, isJobId]);
+  }, [video]);
 
   // Get status config
   const statusConfig = video?.status ? STATUS_CONFIG[video.status] || STATUS_CONFIG.pending : STATUS_CONFIG.pending;
@@ -205,6 +291,9 @@ export default function VideoDetailsPage() {
 
   // Error state
   if (error || !video) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = JSON.stringify({ videoId, isJobId, isIntegerId, actualVideoId, error: errorMessage }, null, 2);
+    
     return (
       <div 
         className="w-full max-w-full lg:mt-3 mx-auto p-4 sm:p-5 md:p-6 rounded-lg"
@@ -226,11 +315,19 @@ export default function VideoDetailsPage() {
         <div className="text-center py-12">
           <XCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
           <p className="text-lg font-medium mb-2" style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}>
-            Video not found
+            {error ? 'Failed to load video' : 'Video not found'}
           </p>
-          <p className="text-sm text-gray-500 mb-6">
-            The video you're looking for doesn't exist or failed to load.
+          <p className="text-sm text-gray-500 mb-4">
+            {error ? errorMessage : 'The video you\'re looking for doesn\'t exist or failed to load.'}
           </p>
+          {error && (
+            <details className="text-left mb-6 p-4 rounded bg-gray-100 dark:bg-gray-800">
+              <summary className="cursor-pointer text-sm font-medium mb-2">Debug Information</summary>
+              <pre className="text-xs overflow-auto" style={{ color: theme === "dark" ? "#A1A1AA" : "#71717A" }}>
+                {errorDetails}
+              </pre>
+            </details>
+          )}
           <Button onClick={handleBack} variant="outline">
             Go Back
           </Button>
@@ -427,10 +524,11 @@ export default function VideoDetailsPage() {
             style={{ color: theme === "dark" ? "#FAFAFA" : "#000000" }}
           >Script</h2>
           <div 
-            className="overflow-auto rounded-md p-3"
+            className="overflow-y-auto rounded-md p-3 scrollbar-hide"
             style={{
               maxHeight: '300px',
-              scrollbarWidth: 'thin',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
               backgroundColor: theme === "dark" ? '#272727' : '#FFFFFF',
             }}
           >

@@ -46,7 +46,7 @@ export default function CreateVideoForm() {
   const [isLoadingVideo, setIsLoadingVideo] = useState(false);
   
   // Config API data
-  const [videoFormats, setVideoFormats] = useState<string[]>(["9:16", "16:9"]);
+  const [videoFormats, setVideoFormats] = useState<string[]>(["9:16", "16:9", "1:1"]);
   const [videoStyles, setVideoStyles] = useState<string[]>([]);
   const [voiceTypes, setVoiceTypes] = useState<string[]>([]);
 
@@ -61,7 +61,7 @@ export default function CreateVideoForm() {
       try {
         setIsLoadingConfig(true);
         const config: ConfigData = await videoApi.fetchConfig();
-        setVideoFormats(config.video_formats.filter(f => f !== "1:1"));
+        setVideoFormats(config.video_formats);
         setVideoStyles(config.video_styles);
         setVoiceTypes(config.voice_types);
         

@@ -36,7 +36,14 @@ export default function GenerateVideoPage() {
   // Fetch job status if videoId is provided (videoId is actually job_id)
   const { data: jobStatus, error: jobError } = useSWR(
     videoId ? `/job-status/${videoId}` : null,
-    () => videoId ? videoApi.getJobStatus(videoId) : Promise.reject('No video ID'),
+    async () => {
+      if (!videoId) return Promise.reject('No video ID');
+      const result = await videoApi.getJobStatus(videoId);
+      console.log("📊 Job Status Response:", result);
+      console.log("   video_id (integer):", result?.video_id);
+      console.log("   status:", result?.status);
+      return result;
+    },
     {
       refreshInterval: videoId ? 2000 : 0, // Poll every 2 seconds
       revalidateOnFocus: true,
@@ -146,12 +153,29 @@ export default function GenerateVideoPage() {
   }, [router]);
 
   const handleViewVideo = useCallback(() => {
-    if (videoId) {
+    // Use actual video_id (integer) from job status if available, otherwise use job_id
+    // The video_id might be in jobStatus.video_id OR jobStatus.video.id (nested)
+    const actualVideoId = jobStatus?.video_id || jobStatus?.video?.id || jobStatus?.id;
+    
+    console.log("🎬 View Video clicked");
+    console.log("   jobStatus:", jobStatus);
+    console.log("   jobStatus.video:", jobStatus?.video);
+    console.log("   actualVideoId (integer):", actualVideoId);
+    console.log("   videoId (job_id/UUID):", videoId);
+    
+    if (actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)))) {
+      // Navigate with integer video_id - this is the correct ID for /api/video/{id}
+      console.log("   ✅ Navigating to /video/" + actualVideoId);
+      router.push(`/video/${actualVideoId}?from=/generate`);
+    } else if (videoId) {
+      // Fallback to job_id if video_id not available yet (might still be processing)
+      console.log("   ⚠️ Fallback: Navigating with job_id:", videoId);
       router.push(`/video/${videoId}?from=/generate`);
     } else {
+      console.log("   ❌ No ID available, going to all-videos");
       router.push("/all-videos");
     }
-  }, [router, videoId]);
+  }, [router, videoId, jobStatus]);
 
   return (
     <div 

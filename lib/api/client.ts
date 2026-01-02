@@ -16,13 +16,33 @@ const apiClient = axios.create({
 
 // Helper function to normalize video data from API
 const normalizeVideo = (video: any): Video => {
-  return {
+  console.log("🔄 Normalizing video data:", video);
+  
+  const normalized = {
     ...video,
-    id: String(video.id), // Ensure ID is string
-    video_path: video.path || video.video_path, // Map 'path' to 'video_path'
+    id: video.id, // Keep as number for proper API routing
+    video_id: video.id, // Set video_id for compatibility
+    title: video.title || 'Generated Video',
+    script: video.script || '',
+    // Map category to style for UI compatibility
+    style: video.style || video.category || '',
+    category: video.category || video.style || '',
+    voice: video.voice || '',
+    format: video.format || '9:16',
     keywords: video.keywords || '',
     negative_keywords: video.negative_keywords || '',
+    // Map backend 'path' to frontend 'video_path'
+    video_path: video.path || video.video_path || '',
+    path: video.path || video.video_path || '',
+    thumbnail: video.thumbnail_path || video.thumbnail || '',
+    thumbnail_path: video.thumbnail_path || video.thumbnail || '',
+    status: video.status || 'completed',
+    duration: video.duration || 0,
+    created_at: video.created_at || new Date().toISOString(),
   };
+  
+  console.log("✅ Normalized video:", normalized);
+  return normalized;
 };
 
 // API methods
@@ -30,7 +50,9 @@ export const videoApi = {
   // List all videos
   listVideos: async (): Promise<Video[]> => {
     try {
-      const response = await apiClient.get<any[]>(API_CONFIG.ENDPOINTS.VIDEOS);
+      const response = await apiClient.get<any[]>(API_CONFIG.ENDPOINTS.VIDEOS, {
+        timeout: 60000, // 60 seconds for large video lists
+      });
       return response.data.map(normalizeVideo);
     } catch (error) {
       console.error('Error fetching videos:', error);
@@ -79,10 +101,40 @@ export const videoApi = {
   getJobStatus: async (jobId: string): Promise<any> => {
     try {
       const response = await apiClient.get(API_CONFIG.ENDPOINTS.JOB_STATUS(jobId));
+      console.log("📡 getJobStatus API response for", jobId, ":", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching job status:', error);
       throw error;
+    }
+  },
+
+  // Get queue (processing videos)
+  getQueue: async (): Promise<any[]> => {
+    try {
+      const response = await apiClient.get('/api/queue');
+      console.log("📡 Queue API response:", response.data);
+      
+      // Handle the queue response structure: {queued: [...], processing: [...]}
+      if (response.data && typeof response.data === 'object') {
+        const queued = Array.isArray(response.data.queued) ? response.data.queued : [];
+        const processing = Array.isArray(response.data.processing) ? response.data.processing : [];
+        
+        // Combine both arrays and return
+        const combined = [...queued, ...processing];
+        console.log("✅ Combined queue items:", combined.length, combined);
+        return combined;
+      }
+      
+      // Fallback if response is already an array
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error fetching queue:', error);
+      return [];
     }
   },
 

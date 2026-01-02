@@ -2,21 +2,30 @@
 export interface Video {
   id: number | string;
   video_id?: number; // Backend returns video_id separately from job_id
+  job_id?: string; // UUID job_id from create-video
   title: string;
+  video_title?: string; // Alternative field name
   script: string;
+  video_script?: string; // Alternative field name
   style: string;
+  video_style?: string; // Alternative field name
   voice: string;
+  voice_type?: string; // Alternative field name
   category?: string;
   format?: string;
+  video_format?: string; // Alternative field name
   duration?: number;
   keywords?: string;
+  keyword?: string; // Alternative field name (singular)
   negative_keywords?: string;
+  negative_keyword?: string; // Alternative field name (singular)
   status: 'pending' | 'processing' | 'completed' | 'failed';
   path?: string; // API returns 'path'
   video_path?: string; // For frontend compatibility
   thumbnail_path?: string;
   error_message?: string;
   created_at?: string;
+  created_date?: string; // Alternative field name
   updated_at?: string;
   // Legacy fields for UI compatibility
   thumbnail?: string;

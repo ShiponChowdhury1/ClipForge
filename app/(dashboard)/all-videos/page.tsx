@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import { videos as mockVideos } from "@/lib/data/mock-videos";
 
 const fetcher = () => videoApi.listVideos();
+const queueFetcher = () => videoApi.getQueue();
 
 export default function AllVideosPage() {
   const { theme } = useTheme();
@@ -23,8 +24,25 @@ export default function AllVideosPage() {
     refreshInterval: 10000,
     revalidateOnFocus: true,
     shouldRetryOnError: true,
+    errorRetryCount: 3,
+    errorRetryInterval: 5000,
     onError: (err) => {
       console.error('Failed to load videos:', err);
+      if (err.code === 'ECONNABORTED') {
+        toast.error('Loading videos is taking longer than expected. Using cached data...');
+      }
+    }
+  });
+
+  // Fetch queue (processing videos) - refresh every 3 seconds
+  const { data: queueData } = useSWR('/queue', queueFetcher, {
+    refreshInterval: 3000,
+    revalidateOnFocus: true,
+    onSuccess: (data) => {
+      console.log("✅ Queue data fetched:", data);
+    },
+    onError: (err) => {
+      console.error("❌ Queue fetch error:", err);
     }
   });
 
@@ -211,6 +229,7 @@ export default function AllVideosPage() {
         ) : (
           <VideoGrid
             videos={filteredVideos}
+            queueData={queueData || []}
             onDelete={handleDelete}
             onDownload={handleDownload}
           />

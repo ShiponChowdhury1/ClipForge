@@ -36,20 +36,29 @@ const FORMAT_LABELS: Record<string, string> = {
 const getCardStyle = (format: string): CardStyleConfig => {
   const configs: Record<string, CardStyleConfig> = {
     "9:16": { 
-      width: 110, 
-      height: 200, 
-      borderRadius: 8,
+      width: 150, 
+      height: 274, 
+      borderRadius: 12,
       paddingTop: 20,
-      paddingBottom: 16,
+      paddingBottom: 20,
       paddingLeft: 20,
       paddingRight: 20,
     },
     "16:9": { 
       width: 150, 
+      height: 194, 
+      borderRadius: 12,
+      paddingTop: 20,
+      paddingBottom: 20,
+      paddingLeft: 20,
+      paddingRight: 20,
+    },
+    "1:1": { 
+      width: 150, 
       height: 134, 
       borderRadius: 12,
       paddingTop: 20,
-      paddingBottom: 16,
+      paddingBottom: 20,
       paddingLeft: 20,
       paddingRight: 20,
     },
@@ -60,7 +69,7 @@ const getCardStyle = (format: string): CardStyleConfig => {
     height: 150, 
     borderRadius: 12,
     paddingTop: 20,
-    paddingBottom: 16,
+    paddingBottom: 20,
     paddingLeft: 20,
     paddingRight: 20,
   };
@@ -71,6 +80,7 @@ const getPreviewStyle = (format: string): PreviewStyleConfig => {
   const configs: Record<string, PreviewStyleConfig> = {
     "9:16": { width: 70, height: 124, borderRadius: 8 },
     "16:9": { width: 110, height: 50, borderRadius: 8 },
+    "1:1": { width: 90, height: 90, borderRadius: 8 },
   };
   
   return configs[format] || { width: 80, height: 80, borderRadius: 8 };
@@ -86,10 +96,10 @@ function VideoFormatSelectorComponent({ selectedFormat, onFormatChange, availabl
     }
   }, [onFormatChange, disabled]);
   
-  // Use API formats if provided, otherwise fallback to default list (only 9:16 and 16:9)
+  // Use API formats if provided, otherwise fallback to all 3 formats (1:1 on right side)
   const formats = availableFormats && availableFormats.length > 0 
-    ? availableFormats.filter(f => f !== "1:1") 
-    : ["9:16", "16:9"];
+    ? availableFormats 
+    : ["9:16", "16:9", "1:1"];
   
   return (
     <div className="mb-4 sm:mb-5 md:mb-6">
