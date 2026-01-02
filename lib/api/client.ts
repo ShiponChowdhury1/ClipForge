@@ -15,7 +15,7 @@ const apiClient = axios.create({
 });
 
 // Helper function to normalize video data from API
-const normalizeVideo = (video: any): Video => {
+const normalizeVideo = (video: Record<string, unknown>): Video => {
   console.log("🔄 Normalizing video data:", video);
   
   const normalized = {
@@ -50,7 +50,7 @@ export const videoApi = {
   // List all videos
   listVideos: async (): Promise<Video[]> => {
     try {
-      const response = await apiClient.get<any[]>(API_CONFIG.ENDPOINTS.VIDEOS, {
+      const response = await apiClient.get<Record<string, unknown>[]>(API_CONFIG.ENDPOINTS.VIDEOS, {
         timeout: 60000, // 60 seconds for large video lists
       });
       return response.data.map(normalizeVideo);
@@ -63,7 +63,7 @@ export const videoApi = {
   // Get single video
   getVideo: async (id: string): Promise<Video> => {
     try {
-      const response = await apiClient.get<any>(API_CONFIG.ENDPOINTS.VIDEO_BY_ID(id));
+      const response = await apiClient.get<Record<string, unknown>>(API_CONFIG.ENDPOINTS.VIDEO_BY_ID(id));
       return normalizeVideo(response.data);
     } catch (error) {
       console.error('Error fetching video:', error);
@@ -74,7 +74,7 @@ export const videoApi = {
   // Create new video
   createVideo: async (data: VideoCreateRequest): Promise<{ id: string; job_id: string; message: string }> => {
     try {
-      const response = await apiClient.post<any>(API_CONFIG.ENDPOINTS.CREATE_VIDEO, data);
+      const response = await apiClient.post<{ job_id: string; message: string }>(API_CONFIG.ENDPOINTS.CREATE_VIDEO, data);
       // API returns job_id, not id
       return {
         id: response.data.job_id, // Use job_id as the id
@@ -98,7 +98,7 @@ export const videoApi = {
   },
 
   // Get job status
-  getJobStatus: async (jobId: string): Promise<any> => {
+  getJobStatus: async (jobId: string): Promise<Record<string, unknown>> => {
     try {
       const response = await apiClient.get(API_CONFIG.ENDPOINTS.JOB_STATUS(jobId));
       console.log("📡 getJobStatus API response for", jobId, ":", response.data);
@@ -110,7 +110,7 @@ export const videoApi = {
   },
 
   // Get queue (processing videos)
-  getQueue: async (): Promise<any[]> => {
+  getQueue: async (): Promise<Record<string, unknown>[]> => {
     try {
       const response = await apiClient.get('/api/queue');
       console.log("📡 Queue API response:", response.data);

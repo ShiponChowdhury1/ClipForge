@@ -126,7 +126,8 @@ export default function GenerateVideoPage() {
       return () => clearInterval(interval);
     } else if (video?.status === 'completed') {
       // Smooth transition to 100%
-      setProgress(100);
+      const timeout = setTimeout(() => setProgress(100), 0);
+      return () => clearTimeout(timeout);
     } else if (video?.status === 'failed') {
       // Keep current progress on failure
     }
@@ -165,10 +166,10 @@ export default function GenerateVideoPage() {
     // 2. video.id (nested video object)
     // 3. video_id (direct property)
     // 4. id (fallback)
-    let actualVideoId = jobStatus?.video_data?.id || 
-                        jobStatus?.video?.id || 
-                        jobStatus?.video_id || 
-                        jobStatus?.id;
+    const actualVideoId = jobStatus?.video_data?.id || 
+                          jobStatus?.video?.id || 
+                          jobStatus?.video_id || 
+                          jobStatus?.id;
     
     console.log("🎬 View Video clicked");
     console.log("   jobStatus:", jobStatus);

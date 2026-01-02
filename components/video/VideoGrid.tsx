@@ -5,13 +5,13 @@ import { useTheme } from "@/components/providers/ThemeProvider";
 
 interface VideoGridProps {
   videos: Video[];
-  queueData?: any[];
+  queueData?: Record<string, unknown>[];
   onDelete: (id: string) => void;
   onDownload: (id: string) => void;
 }
 
 // Loading card component for videos in queue
-function LoadingVideoCard({ queueItem }: { queueItem: any }) {
+function LoadingVideoCard({ queueItem }: { queueItem: Record<string, unknown> }) {
   const { theme } = useTheme();
   
   // Extract title or use default
