@@ -41,6 +41,8 @@ export default function GenerateVideoPage() {
       const result = await videoApi.getJobStatus(videoId);
       console.log("📊 Job Status Response:", result);
       console.log("   video_id (integer):", result?.video_id);
+      console.log("   video_data:", result?.video_data);
+      console.log("   video_data.id:", result?.video_data?.id);
       console.log("   status:", result?.status);
       return result;
     },
@@ -55,13 +57,18 @@ export default function GenerateVideoPage() {
   const video = useMemo(() => {
     if (!jobStatus) return null;
     
+    // Extract video_id from video_data if available (when completed)
+    const videoIdFromData = jobStatus.video_data?.id || jobStatus.video?.id || jobStatus.video_id;
+    
     return {
-      id: videoId,
+      id: videoIdFromData || videoId,
+      video_id: videoIdFromData,
       status: jobStatus.status || 'pending',
-      title: jobStatus.title || 'Video Generation',
-      path: jobStatus.video_path,
+      title: jobStatus.title || jobStatus.video_data?.title || 'Video Generation',
+      path: jobStatus.video_path || jobStatus.video_data?.path,
       error_message: jobStatus.error_message,
       ...jobStatus,
+      ...(jobStatus.video_data || {}), // Spread video_data fields
     } as Video;
   }, [jobStatus, videoId]);
 
@@ -153,23 +160,34 @@ export default function GenerateVideoPage() {
   }, [router]);
 
   const handleViewVideo = useCallback(() => {
-    // Use actual video_id (integer) from job status if available, otherwise use job_id
-    // The video_id might be in jobStatus.video_id OR jobStatus.video.id (nested)
-    const actualVideoId = jobStatus?.video_id || jobStatus?.video?.id || jobStatus?.id;
+    // Priority order for finding video_id:
+    // 1. video_data.id (most common when completed)
+    // 2. video.id (nested video object)
+    // 3. video_id (direct property)
+    // 4. id (fallback)
+    let actualVideoId = jobStatus?.video_data?.id || 
+                        jobStatus?.video?.id || 
+                        jobStatus?.video_id || 
+                        jobStatus?.id;
     
     console.log("🎬 View Video clicked");
     console.log("   jobStatus:", jobStatus);
+    console.log("   jobStatus.video_data:", jobStatus?.video_data);
+    console.log("   jobStatus.video_data.id:", jobStatus?.video_data?.id);
     console.log("   jobStatus.video:", jobStatus?.video);
-    console.log("   actualVideoId (integer):", actualVideoId);
+    console.log("   actualVideoId extracted:", actualVideoId);
     console.log("   videoId (job_id/UUID):", videoId);
     
-    if (actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)))) {
+    // Check if it's a valid integer ID
+    const isValidInteger = actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)));
+    
+    if (isValidInteger) {
       // Navigate with integer video_id - this is the correct ID for /api/video/{id}
       console.log("   ✅ Navigating to /video/" + actualVideoId);
       router.push(`/video/${actualVideoId}?from=/generate`);
     } else if (videoId) {
-      // Fallback to job_id if video_id not available yet (might still be processing)
-      console.log("   ⚠️ Fallback: Navigating with job_id:", videoId);
+      // Fallback to job_id - video details page will handle UUID
+      console.log("   ⚠️ Using job_id (UUID):", videoId);
       router.push(`/video/${videoId}?from=/generate`);
     } else {
       console.log("   ❌ No ID available, going to all-videos");

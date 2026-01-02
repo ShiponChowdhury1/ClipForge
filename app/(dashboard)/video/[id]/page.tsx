@@ -58,8 +58,8 @@ export default function VideoDetailsPage() {
   );
   
   // If job status has video_id, fetch full video details
-  // Check video_id, video.id (nested), and id since backend returns video data nested
-  const actualVideoId = jobStatus?.video_id || jobStatus?.video?.id || jobStatus?.id;
+  // Priority: video_data.id (when completed) > video.id (nested) > video_id > id
+  const actualVideoId = jobStatus?.video_data?.id || jobStatus?.video?.id || jobStatus?.video_id || jobStatus?.id;
   
   // Check if actualVideoId is a valid integer
   const hasValidVideoId = actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)));
@@ -81,6 +81,8 @@ export default function VideoDetailsPage() {
     console.log("isIntegerId:", isIntegerId);
     console.log("jobStatus:", jobStatus);
     console.log("jobStatus.video (nested):", jobStatus?.video);
+    console.log("jobStatus.video_data:", jobStatus?.video_data);
+    console.log("jobStatus.video_data.id:", jobStatus?.video_data?.id);
     console.log("actualVideoId from job:", actualVideoId);
     console.log("hasValidVideoId:", hasValidVideoId);
     console.log("videoData:", videoData);
@@ -116,6 +118,38 @@ export default function VideoDetailsPage() {
       } as Video;
       console.log("📦 Mapped video object:", mappedVideo);
       return mappedVideo;
+    }
+    
+    // If job status has video_data object (when completed), use it
+    if (isJobId && jobStatus?.video_data) {
+      const videoData = jobStatus.video_data;
+      console.log("✅ Using video_data from jobStatus.video_data");
+      console.log("🔍 videoData object:", videoData);
+      console.log("🔍 videoData.id:", videoData.id, "type:", typeof videoData.id);
+      console.log("🔍 videoData keys:", Object.keys(videoData));
+      
+      // Check if id exists in video_data, otherwise check result object
+      const actualId = videoData.id || jobStatus.result?.id;
+      console.log("🔍 actualId from video_data or result:", actualId);
+      
+      return {
+        id: actualId,
+        video_id: actualId,
+        job_id: videoId,
+        title: videoData.title || 'Generated Video',
+        status: jobStatus.status || 'completed',
+        path: videoData.path || videoData.video_path,
+        video_path: videoData.video_path || videoData.path,
+        thumbnail: videoData.thumbnail_path || videoData.thumbnail,
+        created_at: videoData.created_at || jobStatus.created_at,
+        keywords: videoData.keywords || '',
+        negative_keywords: videoData.negative_keywords || '',
+        format: videoData.format || '9:16',
+        style: videoData.style || videoData.category || '',
+        category: videoData.category || videoData.style || '',
+        voice: videoData.voice || '',
+        script: videoData.script || '',
+      } as Video;
     }
     
     // If job status has nested video object with full details, use it
@@ -173,14 +207,19 @@ export default function VideoDetailsPage() {
 
   // Memoized video URL for playback and download (using integer video_id)
   const videoUrl = useMemo(() => {
+    console.log("🎥 videoUrl useMemo - video object:", video);
+    
     if (!video) {
       console.log("❌ No video object for URL generation");
       return '';
     }
     
+    console.log("🔍 video.video_id:", video.video_id, "type:", typeof video.video_id);
+    console.log("🔍 video.id:", video.id, "type:", typeof video.id);
+    
     // Priority: use video_id (integer) from backend
     const actualVideoId = video.video_id || video.id;
-    console.log("🎬 Video URL generation - video_id:", actualVideoId, "type:", typeof actualVideoId);
+    console.log("🎬 Video URL generation - actualVideoId:", actualVideoId, "type:", typeof actualVideoId);
     
     // Only create URL if we have a valid integer ID
     if (actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)))) {
@@ -189,7 +228,7 @@ export default function VideoDetailsPage() {
       return url;
     }
     
-    console.log("❌ Invalid video ID, cannot generate URL");
+    console.log("❌ Invalid video ID, cannot generate URL. video_id:", video.video_id, "id:", video.id);
     return '';
   }, [video]);
 
