@@ -16,8 +16,6 @@ const apiClient = axios.create({
 
 // Helper function to normalize video data from API
 const normalizeVideo = (video: Record<string, unknown>): Video => {
-  console.log("🔄 Normalizing video data:", video);
-  
   const normalized = {
     ...video,
     id: video.id as string | number, // Keep as number for proper API routing
@@ -41,7 +39,6 @@ const normalizeVideo = (video: Record<string, unknown>): Video => {
     created_at: (video.created_at || new Date().toISOString()) as string,
   } as Video;
   
-  console.log("✅ Normalized video:", normalized);
   return normalized;
 };
 
@@ -101,7 +98,6 @@ export const videoApi = {
   getJobStatus: async (jobId: string): Promise<Record<string, unknown>> => {
     try {
       const response = await apiClient.get(API_CONFIG.ENDPOINTS.JOB_STATUS(jobId));
-      console.log("📡 getJobStatus API response for", jobId, ":", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching job status:', error);
@@ -113,7 +109,6 @@ export const videoApi = {
   getQueue: async (): Promise<Record<string, unknown>[]> => {
     try {
       const response = await apiClient.get('/api/queue');
-      console.log("📡 Queue API response:", response.data);
       
       // Handle the queue response structure: {queued: [...], processing: [...]}
       if (response.data && typeof response.data === 'object') {
@@ -122,7 +117,6 @@ export const videoApi = {
         
         // Combine both arrays and return
         const combined = [...queued, ...processing];
-        console.log("✅ Combined queue items:", combined.length, combined);
         return combined;
       }
       

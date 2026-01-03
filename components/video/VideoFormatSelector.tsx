@@ -28,8 +28,9 @@ interface PreviewStyleConfig {
 // Format display names for better UX
 const FORMAT_LABELS: Record<string, string> = {
   "9:16": "Portrait",
+   "1:1": "Square",
   "16:9": "Landscape",
-  "1:1": "Square",
+ 
 };
 
 // Get card dimensions based on format - exact design specs
@@ -44,18 +45,19 @@ const getCardStyle = (format: string): CardStyleConfig => {
       paddingLeft: 20,
       paddingRight: 20,
     },
-    "16:9": { 
+
+    "1:1": { 
       width: 150, 
-      height: 165, 
+      height: 140, 
       borderRadius: 12,
       paddingTop: 20,
       paddingBottom: 20,
       paddingLeft: 20,
       paddingRight: 20,
     },
-    "1:1": { 
+      "16:9": { 
       width: 150, 
-      height: 140, 
+      height: 165, 
       borderRadius: 12,
       paddingTop: 20,
       paddingBottom: 20,
@@ -79,8 +81,9 @@ const getCardStyle = (format: string): CardStyleConfig => {
 const getPreviewStyle = (format: string): PreviewStyleConfig => {
   const configs: Record<string, PreviewStyleConfig> = {
     "9:16": { width: 70, height: 124, borderRadius: 8 },
+     "1:1": { width: 90, height: 90, borderRadius: 8 },
     "16:9": { width: 110, height: 50, borderRadius: 8 },
-    "1:1": { width: 90, height: 90, borderRadius: 8 },
+   
   };
   
   return configs[format] || { width: 80, height: 80, borderRadius: 8 };

@@ -122,13 +122,6 @@ export function VideoGrid({ videos, queueData = [], onDelete, onDownload }: Vide
   
   const hasContent = videos.length > 0 || processingQueue.length > 0;
   
-  // Debug logging
-  console.log("📹 VideoGrid - Videos:", videos.length);
-  console.log("⏳ VideoGrid - Queue items (total):", queueArray.length);
-  console.log("⏳ VideoGrid - Processing queue:", processingQueue.length);
-  console.log("🔍 VideoGrid - Queue data:", queueData);
-  console.log("🔍 VideoGrid - Processing items:", processingQueue);
-  
   if (!hasContent) {
     return (
       <div className="py-8 sm:py-10 md:py-12 text-center">

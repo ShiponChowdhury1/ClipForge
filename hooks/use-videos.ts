@@ -22,7 +22,6 @@ export function useVideos() {
   const downloadVideo = (id: string) => {
     const video = videos.find((v) => v.id === id);
     if (video) {
-      console.log("Downloading:", video.title);
       // Implement download logic
     }
   };

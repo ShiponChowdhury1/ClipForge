@@ -31,7 +31,6 @@ export default function Sidebar() {
   const handleLogout = () => {
     setShowLogoutModal(false);
     // Add your logout logic here
-    console.log("User logged out");
   };
 
   return (

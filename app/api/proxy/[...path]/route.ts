@@ -11,8 +11,6 @@ export async function GET(
   const searchParams = request.nextUrl.searchParams.toString();
   const url = `${BACKEND_URL}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
-  console.log('Proxy GET request to:', url);
-
   try {
     const response = await fetch(url, {
       method: 'GET',
@@ -21,11 +19,8 @@ export async function GET(
       },
     });
 
-    console.log('Backend response status:', response.status);
-
     // Get response as text first to handle non-JSON responses
     const text = await response.text();
-    console.log('Backend response text (first 200 chars):', text.substring(0, 200));
     
     // Try to parse as JSON
     try {
@@ -56,11 +51,8 @@ export async function POST(
   const path = pathArray.join('/');
   const url = `${BACKEND_URL}/${path}`;
   
-  console.log('Proxy POST request to:', url);
-
   try {
     const body = await request.json();
-    console.log('POST body:', JSON.stringify(body).substring(0, 200));
     
     const response = await fetch(url, {
       method: 'POST',
@@ -70,11 +62,8 @@ export async function POST(
       body: JSON.stringify(body),
     });
 
-    console.log('Backend POST response status:', response.status);
-
     // Get response as text first to handle non-JSON responses
     const text = await response.text();
-    console.log('Backend POST response text (first 200 chars):', text.substring(0, 200));
     
     try {
       const data = JSON.parse(text);

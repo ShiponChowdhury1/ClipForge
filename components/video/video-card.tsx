@@ -81,7 +81,6 @@ export default function VideoCard({ video, onDelete, onRegenerate }: VideoCardPr
     setIsRegenerating(true);
     try {
       // TODO: Implement regenerate API endpoint
-      console.log('Regenerate not implemented yet for video:', video.id);
       alert('Regenerate feature is not available in the current API');
       
       // Call parent callback if provided

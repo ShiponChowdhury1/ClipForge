@@ -78,24 +78,8 @@ export default function VideoDetailsPage() {
   
   // Map job status to video object or use direct video data
   const video = useMemo(() => {
-    console.log("========== VIDEO PAGE DEBUG ==========");
-    console.log("URL videoId:", videoId);
-    console.log("isJobId:", isJobId);
-    console.log("isIntegerId:", isIntegerId);
-    console.log("jobStatus:", jobStatus);
-    console.log("jobStatus.video (nested):", jobStatus?.video);
-    console.log("jobStatus.video_data:", jobStatus?.video_data);
-    console.log("jobStatus.video_data.id:", jobStatus?.video_data?.id);
-    console.log("actualVideoId from job:", actualVideoId);
-    console.log("hasValidVideoId:", hasValidVideoId);
-    console.log("videoData:", videoData);
-    console.log("jobError:", jobError);
-    console.log("videoError:", videoError);
-    console.log("======================================");
-    
     // If we have videoData from /api/video/{id}, use it (it has full details)
     if (videoData) {
-      console.log("✅ Using videoData, mapping fields...");
       // API response structure:
       // { id, title, category, format, style, voice, script, keywords, negative_keywords, path, thumbnail_path, duration, created_at, status }
       const mappedVideo = {
@@ -119,22 +103,16 @@ export default function VideoDetailsPage() {
         thumbnail: videoData.thumbnail || videoData.thumbnail_path || '',
         created_at: videoData.created_at || videoData.created_date || new Date().toISOString(),
       } as Video;
-      console.log("📦 Mapped video object:", mappedVideo);
       return mappedVideo;
     }
     
     // If job status has video_data object (when completed), use it
     if (isJobId && jobStatus?.video_data) {
       const videoData = jobStatus.video_data as Record<string, unknown>;
-      console.log("✅ Using video_data from jobStatus.video_data");
-      console.log("🔍 videoData object:", videoData);
-      console.log("🔍 videoData.id:", videoData.id, "type:", typeof videoData.id);
-      console.log("🔍 videoData keys:", Object.keys(videoData));
       
       // Check if id exists in video_data, otherwise check result object
       const resultData = jobStatus.result as Record<string, unknown> | undefined;
       const actualId = videoData.id || resultData?.id;
-      console.log("🔍 actualId from video_data or result:", actualId);
       
       return {
         id: actualId as string | number,
@@ -159,7 +137,6 @@ export default function VideoDetailsPage() {
     // If job status has nested video object with full details, use it
     if (isJobId && jobStatus?.video) {
       const nestedVideo = jobStatus.video as Record<string, unknown>;
-      console.log("✅ Using nested video from jobStatus.video");
       return {
         id: nestedVideo.id as string | number,
         video_id: nestedVideo.id as string | number,
@@ -211,28 +188,19 @@ export default function VideoDetailsPage() {
 
   // Memoized video URL for playback and download (using integer video_id)
   const videoUrl = useMemo(() => {
-    console.log("🎥 videoUrl useMemo - video object:", video);
-    
     if (!video) {
-      console.log("❌ No video object for URL generation");
       return '';
     }
     
-    console.log("🔍 video.video_id:", video.video_id, "type:", typeof video.video_id);
-    console.log("🔍 video.id:", video.id, "type:", typeof video.id);
-    
     // Priority: use video_id (integer) from backend
     const actualVideoId = video.video_id || video.id;
-    console.log("🎬 Video URL generation - actualVideoId:", actualVideoId, "type:", typeof actualVideoId);
     
     // Only create URL if we have a valid integer ID
     if (actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)))) {
       const url = `${API_CONFIG.BASE_URL}/api/download/${actualVideoId}`;
-      console.log("✅ Generated video URL:", url);
       return url;
     }
     
-    console.log("❌ Invalid video ID, cannot generate URL. video_id:", video.video_id, "id:", video.id);
     return '';
   }, [video]);
 

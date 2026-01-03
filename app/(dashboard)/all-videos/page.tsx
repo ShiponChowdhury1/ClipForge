@@ -9,15 +9,19 @@ import { videoApi } from "@/lib/api/client";
 import { Video } from "@/types";
 import { toast } from "react-toastify";
 import { videos as mockVideos } from "@/lib/data/mock-videos";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const fetcher = () => videoApi.listVideos();
 const queueFetcher = () => videoApi.getQueue();
+
+const VIDEOS_PER_PAGE = 15;
 
 export default function AllVideosPage() {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [selectedDate, setSelectedDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch videos with SWR - auto refresh every 10 seconds
   const { data: apiVideos, error, isLoading, mutate } = useSWR<Video[]>('/videos', fetcher, {
@@ -38,9 +42,6 @@ export default function AllVideosPage() {
   const { data: queueData } = useSWR('/queue', queueFetcher, {
     refreshInterval: 3000,
     revalidateOnFocus: true,
-    onSuccess: (data) => {
-      console.log("✅ Queue data fetched:", data);
-    },
     onError: (err) => {
       console.error("❌ Queue fetch error:", err);
     }
@@ -50,13 +51,11 @@ export default function AllVideosPage() {
   const videos = useMemo(() => {
     // If API returned videos, use them
     if (apiVideos && apiVideos.length > 0) {
-      console.log("Using API videos:", apiVideos.length);
       return apiVideos;
     }
     
     // If there's an error, use mock videos
     if (error) {
-      console.log("Using mock videos due to API error");
       return mockVideos;
     }
     
@@ -126,6 +125,43 @@ export default function AllVideosPage() {
     
     return matchesSearch && matchesFilter && matchesDate;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE);
+  const startIndex = (currentPage - 1) * VIDEOS_PER_PAGE;
+  const endIndex = startIndex + VIDEOS_PER_PAGE;
+  const paginatedVideos = filteredVideos.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (value: string) => {
+    setFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleDateChange = (value: string) => {
+    setSelectedDate(value);
+    setCurrentPage(1);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       <Header 
@@ -150,11 +186,11 @@ export default function AllVideosPage() {
 
         <AllVideosFilter
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           activeFilter={filter}
-          onFilterChange={setFilter}
+          onFilterChange={handleFilterChange}
           selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
+          onDateChange={handleDateChange}
         />
 
         {/* Stats */}
@@ -227,12 +263,63 @@ export default function AllVideosPage() {
             <p className="text-sm font-mono mt-1">http://10.10.12.26:8000</p>
           </div>
         ) : (
-          <VideoGrid
-            videos={filteredVideos}
-            queueData={queueData || []}
-            onDelete={handleDelete}
-            onDownload={handleDownload}
-          />
+          <>
+            <VideoGrid
+              videos={paginatedVideos}
+              queueData={queueData || []}
+              onDelete={handleDelete}
+              onDownload={handleDownload}
+            />
+            
+            {/* Pagination Controls */}
+            {filteredVideos.length > VIDEOS_PER_PAGE && (
+              <div className="mt-8 flex items-center justify-between">
+                <div style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }} className="text-sm">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredVideos.length)} of {filteredVideos.length} videos
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200"
+                    style={{
+                      backgroundColor: currentPage === 1 ? (theme === "dark" ? "#27272A" : "#F3F4F6") : (theme === "dark" ? "#3F3F46" : "#FFFFFF"),
+                      borderColor: theme === "dark" ? "#52525B" : "#D1D5DB",
+                      color: currentPage === 1 ? (theme === "dark" ? "#52525B" : "#9CA3AF") : (theme === "dark" ? "#FAFAFA" : "#000000"),
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                      opacity: currentPage === 1 ? 0.5 : 1
+                    }}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </button>
+                  
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }} className="text-sm">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                  </div>
+                  
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200"
+                    style={{
+                      backgroundColor: currentPage === totalPages ? (theme === "dark" ? "#27272A" : "#F3F4F6") : (theme === "dark" ? "#3F3F46" : "#FFFFFF"),
+                      borderColor: theme === "dark" ? "#52525B" : "#D1D5DB",
+                      color: currentPage === totalPages ? (theme === "dark" ? "#52525B" : "#9CA3AF") : (theme === "dark" ? "#FAFAFA" : "#000000"),
+                      cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                      opacity: currentPage === totalPages ? 0.5 : 1
+                    }}
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

@@ -39,11 +39,6 @@ export default function GenerateVideoPage() {
     async () => {
       if (!videoId) return Promise.reject('No video ID');
       const result = await videoApi.getJobStatus(videoId);
-      console.log("📊 Job Status Response:", result);
-      console.log("   video_id (integer):", result?.video_id);
-      console.log("   video_data:", result?.video_data);
-      console.log("   video_data.id:", (result?.video_data as Record<string, unknown> | undefined)?.id);
-      console.log("   status:", result?.status);
       return result;
     },
     {
@@ -184,27 +179,16 @@ export default function GenerateVideoPage() {
                           jobStatus?.video_id || 
                           jobStatus?.id;
     
-    console.log("🎬 View Video clicked");
-    console.log("   jobStatus:", jobStatus);
-    console.log("   jobStatus.video_data:", jobStatus?.video_data);
-    console.log("   jobStatus.video_data.id:", videoDataTyped?.id);
-    console.log("   jobStatus.video:", jobStatus?.video);
-    console.log("   actualVideoId extracted:", actualVideoId);
-    console.log("   videoId (job_id/UUID):", videoId);
-    
     // Check if it's a valid integer ID
     const isValidInteger = actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)));
     
     if (isValidInteger) {
       // Navigate with integer video_id - this is the correct ID for /api/video/{id}
-      console.log("   ✅ Navigating to /video/" + actualVideoId);
       router.push(`/video/${actualVideoId}?from=/generate`);
     } else if (videoId) {
       // Fallback to job_id - video details page will handle UUID
-      console.log("   ⚠️ Using job_id (UUID):", videoId);
       router.push(`/video/${videoId}?from=/generate`);
     } else {
-      console.log("   ❌ No ID available, going to all-videos");
       router.push("/all-videos");
     }
   }, [router, videoId, jobStatus]);
