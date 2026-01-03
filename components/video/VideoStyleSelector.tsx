@@ -15,19 +15,36 @@ interface StyleItem {
   image: string;
 }
 
+
+
 // Default styles with their corresponding images
 const DEFAULT_STYLES: StyleItem[] = [
-  { name: "3D Cartoon", image: "/create/cartoon1.png" },
-  { name: "Anime", image: "/create/cartoon2.png" },
-  { name: "Retro Noir", image: "/create/cartoon3.png" },
-  { name: "Realistic Action Art", image: "/create/cartoon4.png" },
-  { name: "Medieval Painting", image: "/create/cartoon5.png" },
-  { name: "B&W Sketch", image: "/create/cartoon6.png" },
-  { name: "Comic Noir", image: "/create/cartoon7.png" },
-  { name: "Warm Fable", image: "/create/cartoon8.png" },
-  { name: "Hyper Realistic", image: "/create/cartoon9.png" },
-  { name: "Caricature", image: "/create/cartoon10.png" },
+  { name: "Realistic Action Art", image: "/video-styles/realisticActionArt.png" },
+  { name: "B&W Sketch", image: "/video-styles/b-W-Sketch.png" },
+  { name: "Comic Noir", image: "/video-styles/comicNoir.png" },
+  { name: "Retro Noir", image: "/video-styles/retroNoir.png" },
+  { name: "Medieval Painting", image: "/video-styles/medeivalPainting.png" },
+  { name: "Anime", image: "/video-styles/anime.png" },
+  { name: "Warm Fable", image: "/video-styles/warmFable.png" },
+  { name: "Hyper Realistic", image: "/video-styles/hyperRealistic.png" },
+  { name: "3D Cartoon", image: "/video-styles/3D-cartoon.png" },
+  { name: "Caricature", image: "/video-styles/characature.png" },
 ];
+
+/* Anime
+
+Warm Fable
+Warm Fable
+
+Hyper Realistic
+Hyper Realistic
+
+3D Cartoon
+3D Cartoon
+
+Caricature
+Caricature */
+
 
 function VideoStyleSelectorComponent({ selectedStyle, onStyleChange, availableStyles, disabled = false }: VideoStyleSelectorProps) {
   const { theme } = useTheme();
