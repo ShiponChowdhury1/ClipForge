@@ -59,7 +59,10 @@ export default function VideoDetailsPage() {
   
   // If job status has video_id, fetch full video details
   // Priority: video_data.id (when completed) > video.id (nested) > video_id > id
-  const actualVideoId = jobStatus?.video_data?.id || jobStatus?.video?.id || jobStatus?.video_id || jobStatus?.id;
+  const actualVideoId = (jobStatus?.video_data as Record<string, unknown> | undefined)?.id || 
+                        (jobStatus?.video as Record<string, unknown> | undefined)?.id || 
+                        jobStatus?.video_id || 
+                        jobStatus?.id;
   
   // Check if actualVideoId is a valid integer
   const hasValidVideoId = actualVideoId && (typeof actualVideoId === 'number' || /^\d+$/.test(String(actualVideoId)));
@@ -122,57 +125,58 @@ export default function VideoDetailsPage() {
     
     // If job status has video_data object (when completed), use it
     if (isJobId && jobStatus?.video_data) {
-      const videoData = jobStatus.video_data;
+      const videoData = jobStatus.video_data as Record<string, unknown>;
       console.log("✅ Using video_data from jobStatus.video_data");
       console.log("🔍 videoData object:", videoData);
       console.log("🔍 videoData.id:", videoData.id, "type:", typeof videoData.id);
       console.log("🔍 videoData keys:", Object.keys(videoData));
       
       // Check if id exists in video_data, otherwise check result object
-      const actualId = videoData.id || jobStatus.result?.id;
+      const resultData = jobStatus.result as Record<string, unknown> | undefined;
+      const actualId = videoData.id || resultData?.id;
       console.log("🔍 actualId from video_data or result:", actualId);
       
       return {
-        id: actualId,
-        video_id: actualId,
+        id: actualId as string | number,
+        video_id: actualId as string | number,
         job_id: videoId,
-        title: videoData.title || 'Generated Video',
-        status: jobStatus.status || 'completed',
-        path: videoData.path || videoData.video_path,
-        video_path: videoData.video_path || videoData.path,
-        thumbnail: videoData.thumbnail_path || videoData.thumbnail,
-        created_at: videoData.created_at || jobStatus.created_at,
-        keywords: videoData.keywords || '',
-        negative_keywords: videoData.negative_keywords || '',
-        format: videoData.format || '9:16',
-        style: videoData.style || videoData.category || '',
-        category: videoData.category || videoData.style || '',
-        voice: videoData.voice || '',
-        script: videoData.script || '',
+        title: (videoData.title || 'Generated Video') as string,
+        status: (jobStatus.status || 'completed') as string,
+        path: (videoData.path || videoData.video_path) as string,
+        video_path: (videoData.video_path || videoData.path) as string,
+        thumbnail: (videoData.thumbnail_path || videoData.thumbnail) as string,
+        created_at: (videoData.created_at || jobStatus.created_at) as string,
+        keywords: (videoData.keywords || '') as string,
+        negative_keywords: (videoData.negative_keywords || '') as string,
+        format: (videoData.format || '9:16') as string,
+        style: (videoData.style || videoData.category || '') as string,
+        category: (videoData.category || videoData.style || '') as string,
+        voice: (videoData.voice || '') as string,
+        script: (videoData.script || '') as string,
       } as Video;
     }
     
     // If job status has nested video object with full details, use it
     if (isJobId && jobStatus?.video) {
-      const nestedVideo = jobStatus.video;
+      const nestedVideo = jobStatus.video as Record<string, unknown>;
       console.log("✅ Using nested video from jobStatus.video");
       return {
-        id: nestedVideo.id,
-        video_id: nestedVideo.id,
+        id: nestedVideo.id as string | number,
+        video_id: nestedVideo.id as string | number,
         job_id: videoId,
-        title: nestedVideo.title || 'Generated Video',
-        status: jobStatus.status || nestedVideo.status || 'completed',
-        path: nestedVideo.path || nestedVideo.video_path,
-        video_path: nestedVideo.video_path || nestedVideo.path,
-        thumbnail: nestedVideo.thumbnail_path || nestedVideo.thumbnail,
-        created_at: nestedVideo.created_at,
-        keywords: nestedVideo.keywords || '',
-        negative_keywords: nestedVideo.negative_keywords || '',
-        format: nestedVideo.format || '9:16',
-        style: nestedVideo.style || nestedVideo.category || '',
-        category: nestedVideo.category || nestedVideo.style || '',
-        voice: nestedVideo.voice || '',
-        script: nestedVideo.script || '',
+        title: (nestedVideo.title || 'Generated Video') as string,
+        status: (jobStatus.status || nestedVideo.status || 'completed') as string,
+        path: (nestedVideo.path || nestedVideo.video_path) as string,
+        video_path: (nestedVideo.video_path || nestedVideo.path) as string,
+        thumbnail: (nestedVideo.thumbnail_path || nestedVideo.thumbnail) as string,
+        created_at: nestedVideo.created_at as string,
+        keywords: (nestedVideo.keywords || '') as string,
+        negative_keywords: (nestedVideo.negative_keywords || '') as string,
+        format: (nestedVideo.format || '9:16') as string,
+        style: (nestedVideo.style || nestedVideo.category || '') as string,
+        category: (nestedVideo.category || nestedVideo.style || '') as string,
+        voice: (nestedVideo.voice || '') as string,
+        script: (nestedVideo.script || '') as string,
       } as Video;
     }
     

@@ -42,7 +42,7 @@ export default function GenerateVideoPage() {
       console.log("📊 Job Status Response:", result);
       console.log("   video_id (integer):", result?.video_id);
       console.log("   video_data:", result?.video_data);
-      console.log("   video_data.id:", result?.video_data?.id);
+      console.log("   video_data.id:", (result?.video_data as Record<string, unknown> | undefined)?.id);
       console.log("   status:", result?.status);
       return result;
     },
@@ -58,14 +58,16 @@ export default function GenerateVideoPage() {
     if (!jobStatus) return null;
     
     // Extract video_id from video_data if available (when completed)
-    const videoIdFromData = jobStatus.video_data?.id || jobStatus.video?.id || jobStatus.video_id;
+    const videoDataTyped = jobStatus.video_data as Record<string, unknown> | undefined;
+    const videoTyped = jobStatus.video as Record<string, unknown> | undefined;
+    const videoIdFromData = videoDataTyped?.id || videoTyped?.id || jobStatus.video_id;
     
     return {
       id: videoIdFromData || videoId,
       video_id: videoIdFromData,
       status: jobStatus.status || 'pending',
-      title: jobStatus.title || jobStatus.video_data?.title || 'Video Generation',
-      path: jobStatus.video_path || jobStatus.video_data?.path,
+      title: jobStatus.title || videoDataTyped?.title || 'Video Generation',
+      path: jobStatus.video_path || videoDataTyped?.path,
       error_message: jobStatus.error_message,
       ...jobStatus,
       ...(jobStatus.video_data || {}), // Spread video_data fields
@@ -125,9 +127,18 @@ export default function GenerateVideoPage() {
       }, 500);
       return () => clearInterval(interval);
     } else if (video?.status === 'completed') {
-      // Smooth transition to 100%
-      const timeout = setTimeout(() => setProgress(100), 0);
-      return () => clearTimeout(timeout);
+      // Smooth transition from 95% to 100%
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          // Increment by 1% every 100ms for smooth transition (95% → 100% in 500ms)
+          return Math.min(prev + 1, 100);
+        });
+      }, 100);
+      return () => clearInterval(interval);
     } else if (video?.status === 'failed') {
       // Keep current progress on failure
     }
@@ -166,15 +177,17 @@ export default function GenerateVideoPage() {
     // 2. video.id (nested video object)
     // 3. video_id (direct property)
     // 4. id (fallback)
-    const actualVideoId = jobStatus?.video_data?.id || 
-                          jobStatus?.video?.id || 
+    const videoDataTyped = jobStatus?.video_data as Record<string, unknown> | undefined;
+    const videoTyped = jobStatus?.video as Record<string, unknown> | undefined;
+    const actualVideoId = videoDataTyped?.id || 
+                          videoTyped?.id || 
                           jobStatus?.video_id || 
                           jobStatus?.id;
     
     console.log("🎬 View Video clicked");
     console.log("   jobStatus:", jobStatus);
     console.log("   jobStatus.video_data:", jobStatus?.video_data);
-    console.log("   jobStatus.video_data.id:", jobStatus?.video_data?.id);
+    console.log("   jobStatus.video_data.id:", videoDataTyped?.id);
     console.log("   jobStatus.video:", jobStatus?.video);
     console.log("   actualVideoId extracted:", actualVideoId);
     console.log("   videoId (job_id/UUID):", videoId);

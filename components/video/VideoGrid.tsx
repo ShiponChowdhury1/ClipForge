@@ -2,6 +2,7 @@ import VideoCard from "@/components/video/video-card";
 import { Video } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useState, useEffect } from "react";
 
 interface VideoGridProps {
   videos: Video[];
@@ -15,9 +16,43 @@ function LoadingVideoCard({ queueItem }: { queueItem: Record<string, unknown> })
   const { theme } = useTheme();
   
   // Extract title or use default
-  const title = queueItem.title || queueItem.video_title || 'Generating Video...';
-  const status = queueItem.status || 'pending';
-  const progress = queueItem.progress || 0;
+  const title = (queueItem.title || queueItem.video_title || 'Generating Video...') as string;
+  const status = (queueItem.status || 'pending') as string;
+  const backendProgress = typeof queueItem.progress === 'number' ? queueItem.progress : 0;
+  
+  // Initialize progress based on status
+  const [animatedProgress, setAnimatedProgress] = useState(() => {
+    return status === 'processing' ? 1 : 0;
+  });
+  
+  // Animate progress from current to backend progress
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimatedProgress(prev => {
+        // Reset to 0 if pending
+        if (status === 'pending') return 0;
+        
+        // Start from 1% if processing and currently at 0
+        if (status === 'processing' && prev === 0) return 1;
+        
+        // If we have backend progress, smoothly move towards it
+        if (backendProgress > 0) {
+          if (prev < backendProgress) {
+            return Math.min(prev + 1, backendProgress);
+          }
+          return backendProgress;
+        }
+        
+        // Otherwise simulate progress up to 95%
+        if (prev >= 95) return 95;
+        return prev + Math.random() * 2;
+      });
+    }, 200);
+    
+    return () => clearInterval(interval);
+  }, [status, backendProgress]);
+  
+  const displayProgress = Math.round(animatedProgress);
   
   return (
     <div 
@@ -39,19 +74,19 @@ function LoadingVideoCard({ queueItem }: { queueItem: Record<string, unknown> })
           <div className="text-sm font-medium" style={{ color: theme === "dark" ? "#A1A1AA" : "#6B7280" }}>
             {status === 'pending' ? 'Queued...' : 'Processing...'}
           </div>
-          {progress > 0 && (
+          {displayProgress > 0 && (
             <div className="text-xs font-semibold text-blue-500">
-              {progress}%
+              {displayProgress}%
             </div>
           )}
         </div>
         
         {/* Progress bar at bottom */}
-        {progress > 0 && (
+        {displayProgress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-700">
             <div 
               className="h-full bg-blue-500 transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${displayProgress}%` }}
             />
           </div>
         )}

@@ -20,26 +20,26 @@ const normalizeVideo = (video: Record<string, unknown>): Video => {
   
   const normalized = {
     ...video,
-    id: video.id, // Keep as number for proper API routing
-    video_id: video.id, // Set video_id for compatibility
-    title: video.title || 'Generated Video',
-    script: video.script || '',
+    id: video.id as string | number, // Keep as number for proper API routing
+    video_id: video.id as string | number, // Set video_id for compatibility
+    title: (video.title || 'Generated Video') as string,
+    script: (video.script || '') as string,
     // Map category to style for UI compatibility
-    style: video.style || video.category || '',
-    category: video.category || video.style || '',
-    voice: video.voice || '',
-    format: video.format || '9:16',
-    keywords: video.keywords || '',
-    negative_keywords: video.negative_keywords || '',
+    style: (video.style || video.category || '') as string,
+    category: (video.category || video.style || '') as string,
+    voice: (video.voice || '') as string,
+    format: (video.format || '9:16') as string,
+    keywords: (video.keywords || '') as string,
+    negative_keywords: (video.negative_keywords || '') as string,
     // Map backend 'path' to frontend 'video_path'
-    video_path: video.path || video.video_path || '',
-    path: video.path || video.video_path || '',
-    thumbnail: video.thumbnail_path || video.thumbnail || '',
-    thumbnail_path: video.thumbnail_path || video.thumbnail || '',
-    status: video.status || 'completed',
-    duration: video.duration || 0,
-    created_at: video.created_at || new Date().toISOString(),
-  };
+    video_path: (video.path || video.video_path || '') as string,
+    path: (video.path || video.video_path || '') as string,
+    thumbnail: (video.thumbnail_path || video.thumbnail || '') as string,
+    thumbnail_path: (video.thumbnail_path || video.thumbnail || '') as string,
+    status: (video.status || 'completed') as string,
+    duration: (video.duration || 0) as number,
+    created_at: (video.created_at || new Date().toISOString()) as string,
+  } as Video;
   
   console.log("✅ Normalized video:", normalized);
   return normalized;
