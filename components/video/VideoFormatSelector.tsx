@@ -37,7 +37,7 @@ const getCardStyle = (format: string): CardStyleConfig => {
   const configs: Record<string, CardStyleConfig> = {
     "9:16": { 
       width: 150, 
-      height: 274, 
+      height: 222, 
       borderRadius: 12,
       paddingTop: 20,
       paddingBottom: 20,
@@ -46,7 +46,7 @@ const getCardStyle = (format: string): CardStyleConfig => {
     },
     "16:9": { 
       width: 150, 
-      height: 194, 
+      height: 165, 
       borderRadius: 12,
       paddingTop: 20,
       paddingBottom: 20,
@@ -96,10 +96,10 @@ function VideoFormatSelectorComponent({ selectedFormat, onFormatChange, availabl
     }
   }, [onFormatChange, disabled]);
   
-  // Use API formats if provided, otherwise fallback to all 3 formats (1:1 on right side)
+  // Use API formats if provided, otherwise fallback to all 3 formats (order: 9:16, 1:1, 16:9)
   const formats = availableFormats && availableFormats.length > 0 
     ? availableFormats 
-    : ["9:16", "16:9", "1:1"];
+    : ["9:16", "1:1", "16:9"];
   
   return (
     <div className="mb-4 sm:mb-5 md:mb-6">
@@ -123,7 +123,7 @@ function VideoFormatSelectorComponent({ selectedFormat, onFormatChange, availabl
               disabled={disabled}
               aria-pressed={isSelected}
               aria-label={`Select ${label} format (${format})`}
-              className="flex flex-col items-center justify-between transition-all duration-200 hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-end"
               style={{
                 width: cardStyle.width,
                 height: cardStyle.height,
@@ -133,46 +133,36 @@ function VideoFormatSelectorComponent({ selectedFormat, onFormatChange, availabl
                 paddingLeft: cardStyle.paddingLeft,
                 paddingRight: cardStyle.paddingRight,
                 border: isSelected 
-                  ? '3px solid #3B82F6' 
+                  ? '2px solid #3B82F6' 
                   : `1px solid ${theme === "dark" ? '#5E5E5E' : '#D4D4D8'}`,
-                backgroundColor: isSelected 
-                  ? (theme === "dark" ? '#1E3A5F' : '#DBEAFE')
-                  : (theme === "dark" ? '#18181B' : '#F4F4F5'),
+                backgroundColor: theme === "dark" ? '#18181B' : '#F4F4F5',
                 transform: isSelected ? 'scale(1.03)' : 'scale(1)',
                 boxShadow: isSelected ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
               }}
             >
               {/* Inner Preview Box */}
               <div 
-                className="flex items-center justify-center transition-all duration-200"
+                className="flex items-center justify-center"
                 style={{ 
                   width: previewStyle.width,
                   height: previewStyle.height,
                   borderRadius: previewStyle.borderRadius,
-                  border: isSelected
-                    ? '2px solid #3B82F6'
-                    : `2px solid ${theme === "dark" ? "#52525B" : "#A1A1AA"}`,
-                  backgroundColor: isSelected
-                    ? 'rgba(59, 130, 246, 0.1)'
-                    : 'transparent',
+                  border: `2px solid ${theme === "dark" ? "#52525B" : "#A1A1AA"}`,
+                  backgroundColor: 'transparent',
                 }}
               />
               
               {/* Format Name */}
               <span 
-                className="text-sm font-medium mt-2"
-                style={{ color: isSelected ? '#3B82F6' : (theme === "dark" ? "#FAFAFA" : "#000000") }}
+                className="text-sm font-medium"
+                style={{ 
+                  color: isSelected ? '#3B82F6' : (theme === "dark" ? "#FAFAFA" : "#000000"),
+                  marginTop: '12px'
+                }}
               >
                 {format}
               </span>
-              
-              {/* Format Label */}
-              <span 
-                className="text-xs mt-0.5 opacity-70"
-                style={{ color: isSelected ? '#3B82F6' : (theme === "dark" ? "#A1A1AA" : "#71717A") }}
-              >
-                {label}
-              </span>
+            
             </button>
           );
         })}
