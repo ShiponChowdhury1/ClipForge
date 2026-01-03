@@ -78,7 +78,7 @@ function VideoStyleSelectorComponent({ selectedStyle, onStyleChange, availableSt
       >
         Video Style
       </label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
         {displayStyles.map((style) => (
           <button
             key={style.name}
@@ -86,7 +86,7 @@ function VideoStyleSelectorComponent({ selectedStyle, onStyleChange, availableSt
             disabled={disabled}
             aria-pressed={selectedStyle === style.name}
             aria-label={`Select ${style.name} style`}
-            className="flex flex-col items-center transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-col items-center transition-all duration-200 hover:scale-[1.02] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ 
               width: '192.8px',
               height: '198.67px',
@@ -95,10 +95,8 @@ function VideoStyleSelectorComponent({ selectedStyle, onStyleChange, availableSt
               gap: '12px',
               border: selectedStyle === style.name 
                 ? '2px solid #3B82F6' 
-                : `1px solid ${theme === "dark" ? '#5E5E5E' : '#D4D4D8'}`,
-              backgroundColor: selectedStyle === style.name 
-                ? (theme === "dark" ? '#1E3A5F' : '#DBEAFE') 
-                : (theme === "dark" ? '#18181B' : '#F4F4F5'),
+                : '1px solid #5E5E5E',
+              backgroundColor: theme === "dark" ? '#18181B' : '#F4F4F5',
               transform: selectedStyle === style.name ? 'scale(1.02)' : 'scale(1)',
             }}
           >
