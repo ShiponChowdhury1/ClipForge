@@ -31,19 +31,6 @@ const DEFAULT_STYLES: StyleItem[] = [
   { name: "Caricature", image: "/video-styles/characature.png" },
 ];
 
-/* Anime
-
-Warm Fable
-Warm Fable
-
-Hyper Realistic
-Hyper Realistic
-
-3D Cartoon
-3D Cartoon
-
-Caricature
-Caricature */
 
 
 function VideoStyleSelectorComponent({ selectedStyle, onStyleChange, availableStyles, disabled = false }: VideoStyleSelectorProps) {

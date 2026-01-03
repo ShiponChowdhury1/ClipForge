@@ -55,7 +55,7 @@ const getCardStyle = (format: string): CardStyleConfig => {
     },
     "1:1": { 
       width: 150, 
-      height: 134, 
+      height: 140, 
       borderRadius: 12,
       paddingTop: 20,
       paddingBottom: 20,
