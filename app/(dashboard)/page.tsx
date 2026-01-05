@@ -24,13 +24,46 @@ export default function DashboardPage() {
   });
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this video?')) {
-      return;
-    }
-    
+    toast.warning(
+      <div>
+        <p className="font-semibold mb-2">Delete this video?</p>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              toast.dismiss();
+              try {
+                await videoApi.deleteVideo(id);
+                toast.success("Video deleted successfully! 🎉");
+                mutate();
+              } catch (error) {
+                console.error('Failed to delete video:', error);
+                toast.error("Failed to delete video");
+              }
+            }}
+            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss()}
+            className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>,
+      {
+        autoClose: false,
+        closeButton: true,
+        draggable: false,
+      }
+    );
+  };
+
+  const handleDeleteContinue = async (id: string) => {
     try {
       await videoApi.deleteVideo(id);
-      toast.success("Video deleted successfully!");
+      toast.success("Video deleted successfully! 🎉");
       mutate(); // Refresh the video list
     } catch (error) {
       console.error('Failed to delete video:', error);
